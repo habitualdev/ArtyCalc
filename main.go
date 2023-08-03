@@ -137,8 +137,8 @@ func PolarToGrid(distance, azimuth, gunPos string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	northingDelta := math.Sin(float64(az)/r2m) * distanceFloat
-	eastingDelta := math.Cos(float64(az)/r2m) * distanceFloat
+	sinDelta := math.Sin(float64(az)/r2m) * distanceFloat
+	cosDelta := math.Cos(float64(az)/r2m) * distanceFloat
 
 	switch {
 	case len(gunPos) == 6:
@@ -179,17 +179,17 @@ func PolarToGrid(distance, azimuth, gunPos string) (string, error) {
 
 	switch {
 	case quadrant == 1:
-		targetNorthing = northingGunInt + int(northingDelta)
-		targetEasting = eastingGunInt + int(eastingDelta)
+		targetNorthing = northingGunInt + int(cosDelta)
+		targetEasting = eastingGunInt + int(sinDelta)
 	case quadrant == 2:
-		targetNorthing = northingGunInt + int(eastingDelta)
-		targetEasting = eastingGunInt + int(northingDelta)
+		targetNorthing = northingGunInt + int(cosDelta)
+		targetEasting = eastingGunInt + int(sinDelta)
 	case quadrant == 3:
-		targetNorthing = northingGunInt + int(eastingDelta)
-		targetEasting = eastingGunInt + int(northingDelta)
+		targetNorthing = northingGunInt + int(cosDelta)
+		targetEasting = eastingGunInt + int(sinDelta)
 	case quadrant == 4:
-		targetNorthing = northingGunInt + int(northingDelta)
-		targetEasting = eastingGunInt + int(eastingDelta)
+		targetNorthing = northingGunInt + int(cosDelta)
+		targetEasting = eastingGunInt + int(sinDelta)
 	}
 
 	targetEastingString := fmt.Sprintf("%d", targetEasting)
