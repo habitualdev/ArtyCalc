@@ -155,16 +155,59 @@ func PolarToGrid(distance, azimuth, gunPos string) (string, error) {
 		return "", errors.New("Check your gun position grid.")
 	}
 
+	quadrant := 0
+
+	switch {
+	case az < 1600:
+		quadrant = 1
+	case az < 3200:
+		quadrant = 2
+	case az < 4800:
+		quadrant = 3
+	case az < 6400:
+		quadrant = 4
+	}
+
 	eastingGun := gunPos[:5]
 	northingGun := gunPos[5:]
 
 	eastingGunInt, err := strconv.Atoi(eastingGun)
 	northingGunInt, err := strconv.Atoi(northingGun)
 
-	targetNorthing := northingGunInt + int(northingDelta)
-	targetEasting := eastingGunInt + int(eastingDelta)
+	targetNorthing := 0
+	targetEasting := 0
 
-	targetGrid := fmt.Sprintf("%d%d", targetEasting, targetNorthing)
+	switch {
+	case quadrant == 1:
+		targetNorthing = northingGunInt + int(northingDelta)
+		targetEasting = eastingGunInt + int(eastingDelta)
+	case quadrant == 2:
+		targetNorthing = northingGunInt + int(eastingDelta)
+		targetEasting = eastingGunInt + int(northingDelta)
+	case quadrant == 3:
+		targetNorthing = northingGunInt + int(eastingDelta)
+		targetEasting = eastingGunInt + int(northingDelta)
+	case quadrant == 4:
+		targetNorthing = northingGunInt + int(northingDelta)
+		targetEasting = eastingGunInt + int(eastingDelta)
+	}
+
+	targetEastingString := fmt.Sprintf("%d", targetEasting)
+	if len(targetEastingString) < 5 {
+		for len(targetEastingString) != 5 {
+			targetEastingString = "0" + targetEastingString
+		}
+	}
+
+	targetNorthingString := fmt.Sprintf("%d", targetNorthing)
+	if len(targetNorthingString) < 5 {
+		for len(targetNorthingString) != 5 {
+			targetNorthingString = "0" + targetNorthingString
+		}
+	}
+
+	targetGrid := targetEastingString + targetNorthingString
+
 	return targetGrid, nil
 }
 
@@ -297,12 +340,35 @@ func CalcAzimuth(gunPos, targetPos string) (float64, error) {
 		return math.NaN(), errors.New("Non-Number in gun position grid")
 	}
 
+	quadrant := 0
+
+	switch {
+	case eastingTargetInt > eastingGunInt && northingTargetInt > northingGunInt:
+		quadrant = 1
+	case eastingTargetInt > eastingGunInt && northingGunInt > northingTargetInt:
+		quadrant = 2
+	case eastingGunInt > eastingTargetInt && northingGunInt > northingTargetInt:
+		quadrant = 3
+	case northingTargetInt > northingGunInt && eastingTargetInt < eastingGunInt:
+		quadrant = 4
+	}
+
 	deltaEasting := eastingTargetInt - eastingGunInt
 	deltaNorthing := northingTargetInt - northingGunInt
 
-	azMils := math.Atan(float64(deltaEasting)/float64(deltaNorthing)) * r2m
+	azMils := 0.0
+	if quadrant == 3 || quadrant == 2 {
+		azMils = math.Atan(float64(deltaEasting)/float64(deltaNorthing)) * r2m
+		azMils = azMils + 3200
+	} else {
+		azMils = math.Atan(float64(deltaEasting)/float64(deltaNorthing)) * r2m
+	}
+
 	if azMils < 0 {
 		azMils = azMils + 6400
+	}
+	if azMils > 6400 {
+		azMils = azMils - 6400
 	}
 
 	return azMils, nil
