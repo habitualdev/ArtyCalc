@@ -17,6 +17,9 @@ import (
 //go:embed artillery.json
 var artilleryJson []byte
 
+//go:embed splash.mp3
+var splashSound []byte
+
 var g float64 = 9.80665
 
 var r2m float64 = 1018.591636
@@ -378,12 +381,13 @@ func CalcAzimuth(gunPos, targetPos string) (float64, error) {
 func main() {
 	lastCalcMission := FireMission{}
 	var savedMissions []FireMission
+	var err error
 
 	guns := Guns{}
 
 	curGun := Gun{}
 
-	err := json.Unmarshal(artilleryJson, &guns)
+	err = json.Unmarshal(artilleryJson, &guns)
 	if err != nil {
 		return
 	}
@@ -655,6 +659,7 @@ func main() {
 		closeButton := widget.NewButton("Close", func() {
 			shotWindow.Close()
 		})
+
 		shotWindow.SetContent(container.NewBorder(nil, closeButton, nil, nil,
 			widget.NewList(func() int {
 				return len(shots)
