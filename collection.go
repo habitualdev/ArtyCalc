@@ -12,6 +12,4 @@ type FireMission struct {
 	Name       string
 	TargetGrid string
 	TargetAlt  int
-	Azimuth    float64
-	Distance   float64
 }
