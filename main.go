@@ -12,6 +12,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"math"
 	"strconv"
+	"strings"
+	"time"
 )
 
 //go:embed artillery.json
@@ -23,6 +25,8 @@ var splashSound []byte
 var g float64 = 9.80665
 
 var r2m float64 = 1018.591636
+
+var a fyne.App
 
 func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64) float64 {
 	delta := finalHeight - initHeight
@@ -392,7 +396,7 @@ func main() {
 		return
 	}
 
-	a := app.New()
+	a = app.New()
 	a.Settings().SetTheme(theme.DarkTheme())
 	w := a.NewWindow("CFF Calculator")
 	azimuthBoxGrid := widget.NewLabel("")
@@ -497,6 +501,34 @@ func main() {
 		laTof := TimeOfFlight(curGun[chargeSelection.Selected], lowAngle/r2m)
 
 		timeOfFlight.SetText(fmt.Sprintf("HA: %s | LA: %s", haTof, laTof))
+	})
+
+	haTofButton := widget.NewButton("High Angle ToF Alarm", func() {
+		go func() {
+			splitTof := strings.Split(timeOfFlight.Text, "|")
+			ha := strings.Split(strings.ReplaceAll(splitTof[0], " ", ""), ":")[1]
+			haInt, err := strconv.Atoi(ha)
+			if err != nil {
+				a.SendNotification(fyne.NewNotification("Error", "Check if ToF is populated"))
+				return
+			}
+			time.Sleep(time.Duration(haInt) * time.Second)
+			Splash()
+		}()
+	})
+
+	laTofButton := widget.NewButton("Low Angle ToF Alarm", func() {
+		go func() {
+			splitTof := strings.Split(timeOfFlight.Text, "|")
+			la := strings.Split(strings.ReplaceAll(splitTof[1], " ", ""), ":")[1]
+			laInt, err := strconv.Atoi(la)
+			if err != nil {
+				a.SendNotification(fyne.NewNotification("Error", "Check if ToF is populated"))
+				return
+			}
+			time.Sleep(time.Duration(laInt) * time.Second)
+			Splash()
+		}()
 	})
 
 	polarGridLabel := widget.NewLabel("")
@@ -771,6 +803,9 @@ func main() {
 		}
 		savedMissionList.UnselectAll()
 	}
+
+	gunSelectRow.Add(haTofButton)
+	gunSelectRow.Add(laTofButton)
 
 	w.SetContent(container.NewBorder(gunSelectRow, nil, nil, nil, missionTabs))
 	w.ShowAndRun()
