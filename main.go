@@ -19,8 +19,23 @@ import (
 //go:embed artillery.json
 var artilleryJson []byte
 
-//go:embed splash.mp3
-var splashSound []byte
+//go:embed audio/splash_1.mp3
+var splashSound1 []byte
+
+//go:embed audio/splash_2.mp3
+var splashSound2 []byte
+
+//go:embed audio/solution_1.mp3
+var solution1 []byte
+
+//go:embed audio/solution_2.mp3
+var solution2 []byte
+
+//go:embed audio/splash_5_1.mp3
+var splashInFive1 []byte
+
+//go:embed audio/splash_5_2.mp3
+var splashInFive2 []byte
 
 var g float64 = 9.80665
 
@@ -499,11 +514,11 @@ func main() {
 		}
 		haTof := TimeOfFlight(curGun[chargeSelection.Selected], highAngle/r2m)
 		laTof := TimeOfFlight(curGun[chargeSelection.Selected], lowAngle/r2m)
-
 		timeOfFlight.SetText(fmt.Sprintf("HA: %s | LA: %s", haTof, laTof))
+		go Solution()
 	})
 
-	haTofButton := widget.NewButton("High Angle ToF Alarm", func() {
+	haTofButton := widget.NewButton("HA ToF Alarm", func() {
 		go func() {
 			splitTof := strings.Split(timeOfFlight.Text, "|")
 			ha := strings.Split(strings.ReplaceAll(splitTof[0], " ", ""), ":")[1]
@@ -512,12 +527,20 @@ func main() {
 				a.SendNotification(fyne.NewNotification("Error", "Check if ToF is populated"))
 				return
 			}
+
+			if haInt > 5 {
+				haInt = haInt - 5
+			} else {
+				Splash()
+				return
+			}
+
 			time.Sleep(time.Duration(haInt) * time.Second)
 			Splash()
 		}()
 	})
 
-	laTofButton := widget.NewButton("Low Angle ToF Alarm", func() {
+	laTofButton := widget.NewButton("LA ToF Alarm", func() {
 		go func() {
 			splitTof := strings.Split(timeOfFlight.Text, "|")
 			la := strings.Split(strings.ReplaceAll(splitTof[1], " ", ""), ":")[1]
@@ -526,6 +549,13 @@ func main() {
 				a.SendNotification(fyne.NewNotification("Error", "Check if ToF is populated"))
 				return
 			}
+			if laInt > 5 {
+				laInt = laInt - 5
+			} else {
+				Splash()
+				return
+			}
+
 			time.Sleep(time.Duration(laInt) * time.Second)
 			Splash()
 		}()
@@ -567,8 +597,8 @@ func main() {
 
 		haTof := TimeOfFlight(curGun[chargeSelection.Selected], highAngle/r2m)
 		laTof := TimeOfFlight(curGun[chargeSelection.Selected], lowAngle/r2m)
-
 		timeOfFlight.SetText(fmt.Sprintf("HA: %s | LA: %s", haTof, laTof))
+		go Solution()
 	})
 
 	otlAngle := widget.NewEntry()
@@ -602,6 +632,7 @@ func main() {
 		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
 		otlCalc.SetText(OTLAdjust(float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(otlDistInt),
 			float64(otlAngleInt), origAz, curGun[chargeSelection.Selected], otlDistance.SelectedText()))
+		go Solution()
 		otlCalc.Refresh()
 	})
 
@@ -647,6 +678,7 @@ func main() {
 			Width:  500,
 			Height: 400,
 		})
+		go Solution()
 		shotWindow.Show()
 	})
 
@@ -704,6 +736,7 @@ func main() {
 			Width:  500,
 			Height: 400,
 		})
+		go Solution()
 		shotWindow.Show()
 
 	})
@@ -762,7 +795,13 @@ func main() {
 
 	savedMissionsTab := container.NewTabItem("Saved Missions", savedMissionList)
 
-	missionTabs := container.NewAppTabs(gridMission, polarMission, adjustMissions, savedMissionsTab)
+	infoTab := container.NewTabItemWithIcon("Info", theme.ListIcon(), container.NewVBox(
+		widget.NewLabel("Thanks to the following people:"),
+		widget.NewLabel("Gens - For his original spreadsheet"),
+		widget.NewLabel("Cashton - For the audio lines"),
+	))
+
+	missionTabs := container.NewAppTabs(gridMission, polarMission, adjustMissions, savedMissionsTab, infoTab)
 
 	savedMissionList.OnSelected = func(id widget.ListItemID) {
 
@@ -801,6 +840,7 @@ func main() {
 			a.SendNotification(fyne.NewNotification("Error", err.Error()))
 			return
 		}
+		go Solution()
 		savedMissionList.UnselectAll()
 	}
 
