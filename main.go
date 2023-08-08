@@ -43,6 +43,8 @@ var r2m float64 = 1018.591636
 
 var a fyne.App
 
+var mute = false
+
 func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64) float64 {
 	delta := finalHeight - initHeight
 	tanThetaHigh := (float64(velocity*velocity) + math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
@@ -418,6 +420,14 @@ func main() {
 	gunElevationPolar := widget.NewLabel("")
 	gunElevationGrid := widget.NewLabel("")
 
+	muteButton := widget.NewButton("Toggle Sound", func() {
+		if mute {
+			mute = false
+		} else {
+			mute = true
+		}
+	})
+
 	timeOfFlight := widget.NewLabel("TOF: ")
 
 	azimuthBoxPolar := widget.NewEntry()
@@ -429,25 +439,11 @@ func main() {
 	targetGrid := widget.NewEntry()
 	targetAltitude := widget.NewEntry()
 
+	targetName := widget.NewEntry()
+
 	saveMissionButtonGrid := widget.NewButton("SaveMission", func() {
-
-		fmRecordWindow := a.NewWindow("Record Fire Mission")
-
-		fmNameEntry := widget.NewEntry()
-
-		closeFmWindow := widget.NewButton("Save", func() {
-			lastCalcMission.Name = fmNameEntry.Text
-			savedMissions = append(savedMissions, lastCalcMission)
-			fmRecordWindow.Close()
-		})
-
-		fmRecordWindow.SetContent(container.NewVBox(widget.NewLabel("FM Name:"), fmNameEntry, closeFmWindow))
-
-		fmRecordWindow.Resize(fyne.Size{
-			Width:  400,
-			Height: 300,
-		})
-		fmRecordWindow.Show()
+		lastCalcMission.Name = targetName.Text
+		savedMissions = append(savedMissions, lastCalcMission)
 
 	})
 
@@ -531,12 +527,17 @@ func main() {
 			if haInt > 5 {
 				haInt = haInt - 5
 			} else {
-				Splash()
+				if !mute {
+					Splash()
+				}
+
 				return
 			}
 
 			time.Sleep(time.Duration(haInt) * time.Second)
-			Splash()
+			if !mute {
+				Splash()
+			}
 		}()
 	})
 
@@ -552,12 +553,16 @@ func main() {
 			if laInt > 5 {
 				laInt = laInt - 5
 			} else {
-				Splash()
+				if !mute {
+					Splash()
+				}
 				return
 			}
 
 			time.Sleep(time.Duration(laInt) * time.Second)
-			Splash()
+			if !mute {
+				Splash()
+			}
 		}()
 	})
 
@@ -598,7 +603,9 @@ func main() {
 		haTof := TimeOfFlight(curGun[chargeSelection.Selected], highAngle/r2m)
 		laTof := TimeOfFlight(curGun[chargeSelection.Selected], lowAngle/r2m)
 		timeOfFlight.SetText(fmt.Sprintf("HA: %s | LA: %s", haTof, laTof))
-		go Solution()
+		if !mute {
+			go Solution()
+		}
 	})
 
 	otlAngle := widget.NewEntry()
@@ -632,7 +639,9 @@ func main() {
 		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
 		otlCalc.SetText(OTLAdjust(float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(otlDistInt),
 			float64(otlAngleInt), origAz, curGun[chargeSelection.Selected], otlDistance.SelectedText()))
-		go Solution()
+		if !mute {
+			go Solution()
+		}
 		otlCalc.Refresh()
 	})
 
@@ -771,7 +780,7 @@ func main() {
 		widget.NewLabel("Gun to Target Azimuth"), azimuthBoxGrid, widget.NewSeparator(),
 		widget.NewLabel("Gun Elevation"), gunElevationGrid, widget.NewSeparator(),
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
-		container.NewHBox(calculateMissionGrid, saveMissionButtonGrid)))
+		container.NewHBox(calculateMissionGrid, saveMissionButtonGrid, targetName)))
 
 	polarMission := container.NewTabItem("Polar Mission", container.NewVBox(
 		widget.NewLabel("Gun Position"), gunGrid, widget.NewSeparator(),
@@ -782,7 +791,7 @@ func main() {
 		widget.NewLabel("Gun Elevation"), gunElevationPolar, widget.NewSeparator(),
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
 		widget.NewLabel("Target Calculated Grid"), polarGridLabel, widget.NewSeparator(),
-		container.NewHBox(calculateMissionPolar, saveMissionButtonGrid)))
+		container.NewHBox(calculateMissionPolar, saveMissionButtonGrid, targetName)))
 
 	savedMissionList := widget.NewList(
 		func() int {
@@ -799,6 +808,7 @@ func main() {
 		widget.NewLabel("Thanks to the following people:"),
 		widget.NewLabel("Gens - For his original spreadsheet"),
 		widget.NewLabel("Cashton - For the audio lines"),
+		muteButton,
 	))
 
 	missionTabs := container.NewAppTabs(gridMission, polarMission, adjustMissions, savedMissionsTab, infoTab)
