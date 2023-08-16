@@ -33,6 +33,10 @@ func init() {
 
 func Splash() {
 
+	if mute {
+		return
+	}
+
 	flip := rand.Intn(2)
 
 	var fileBytesReader *bytes.Reader
