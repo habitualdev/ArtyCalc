@@ -75,7 +75,7 @@ func LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, shiftAzim
 	xf := xo + xs
 	yf := yo + ys
 
-	newDistance := math.Sqrt((xf * xf) + (yf + yf))
+	newDistance := math.Sqrt((xf * xf) + (yf * yf))
 
 	tanSelect := 0
 
@@ -440,6 +440,7 @@ func main() {
 	targetAltitude := widget.NewEntry()
 
 	targetName := widget.NewEntry()
+	targetName.SetPlaceHolder("TRP Name")
 
 	saveMissionButtonGrid := widget.NewButton("SaveMission", func() {
 		lastCalcMission.Name = targetName.Text
@@ -780,7 +781,8 @@ func main() {
 		widget.NewLabel("Gun to Target Azimuth"), azimuthBoxGrid, widget.NewSeparator(),
 		widget.NewLabel("Gun Elevation"), gunElevationGrid, widget.NewSeparator(),
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
-		container.NewHBox(calculateMissionGrid, saveMissionButtonGrid, targetName)))
+		container.NewGridWithColumns(2, container.NewHBox(calculateMissionGrid, saveMissionButtonGrid), targetName),
+	))
 
 	polarMission := container.NewTabItem("Polar Mission", container.NewVBox(
 		widget.NewLabel("Gun Position"), gunGrid, widget.NewSeparator(),
