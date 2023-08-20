@@ -24,16 +24,16 @@
     "Charge 3":	160,
     "Charge 4": 200
   },
-  "M2 60mm" : {
+  "M2 60mm (PF)" : {
     "Charge 0": 70,
     "Charge 1": 140
   },
-  "M29 81mm" : {
+  "M29 81mm (PF)" : {
     "Charge 0":	70,
     "Charge 1":	140,
     "Charge 2":	200
   },
-  "M101 105mm" : {
+  "M101 105mm (PF)" : {
     "Charge 0":	153.9,
     "Charge 1":	243,
     "Charge 2":	388.8

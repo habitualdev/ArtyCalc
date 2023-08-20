@@ -1,6 +1,7 @@
 package main
 
 import (
+	"C"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -37,30 +38,63 @@ var splashInFive1 []byte
 //go:embed audio/splash_5_2.mp3
 var splashInFive2 []byte
 
-var g float64 = 9.80665
+const g float64 = 9.80665
 
-var r2m float64 = 1018.591636
+const dragCoef float64 = -0.00006
+
+const r2m float64 = 1018.591636
 
 var a fyne.App
 
 var mute = false
 
-func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64) float64 {
+var testAngle = 0.0
+
+var muz = 0.0
+
+func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag bool) (float64, float64) {
 	delta := finalHeight - initHeight
 	tanThetaHigh := (float64(velocity*velocity) + math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
-	return math.Atan(tanThetaHigh) * r2m
+
+	angle := math.Atan(tanThetaHigh) * r2m
+
+	if !drag {
+		return angle, TimeOfFlight(velocity, angle)
+	}
+
+	muz = velocity
+	for testAngle = angle; testAngle != 0; testAngle-- {
+		dist, tof := CalculateForAngle(delta, testAngle, muz)
+		if math.Abs(distance-dist) < 2 {
+
+			return testAngle, tof
+		}
+	}
+	return 0, 0
 }
 
-func CalcAngleLow(initHeight, finalHeight, distance, velocity float64) float64 {
+func CalcAngleLow(initHeight, finalHeight, distance, velocity float64, drag bool) (float64, float64) {
 	delta := finalHeight - initHeight
 	tanThetaLow := (float64(velocity*velocity) - math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
-	return math.Atan(tanThetaLow) * r2m
+	angle := math.Atan(tanThetaLow) * r2m
+	if !drag {
+		return angle, TimeOfFlight(velocity, angle)
+	}
+	muz = velocity
+	for testAngle = angle; testAngle != 1600; testAngle++ {
+		dist, tof := CalculateForAngle(delta, testAngle, muz)
+		if math.Abs(distance-dist) < 2 {
+
+			return testAngle, tof
+		}
+	}
+	return 0, 0
 }
 
-func TimeOfFlight(velocity, angle float64) string {
+func TimeOfFlight(velocity, angle float64) float64 {
 	tof := (2 * velocity * math.Sin(angle)) / g
 
-	return strconv.Itoa(int(tof))
+	return tof
 }
 
 func LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, shiftAzimuth, azimuth, velocity float64) string {
@@ -103,8 +137,8 @@ func LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, shiftAzim
 		newAz = newAz + 6400
 	}
 
-	low := CalcAngleLow(gunHeight, targetHeight, newDistance, velocity)
-	high := CalcAngleHigh(gunHeight, targetHeight, newDistance, velocity)
+	low, _ := CalcAngleLow(gunHeight, targetHeight, newDistance, velocity, true)
+	high, _ := CalcAngleHigh(gunHeight, targetHeight, newDistance, velocity, true)
 
 	return fmt.Sprintf("Azimuth: %d | HA: %d | LA: %d", newAz, int(high), int(low))
 }
@@ -320,7 +354,7 @@ func CalcAzimuth(gunPos, targetPos string) (float64, error) {
 	case len(gunPos) == 10:
 		goodGrids = true
 	default:
-		return math.NaN(), errors.New("Check your gun position grid.")
+		return math.NaN(), errors.New("check your gun position grid")
 	}
 	switch {
 	case len(targetPos) == 6:
@@ -336,10 +370,10 @@ func CalcAzimuth(gunPos, targetPos string) (float64, error) {
 	case len(targetPos) == 10:
 		goodGrids = true
 	default:
-		return math.NaN(), errors.New("Request CFF Readback. Bad Target Grid.")
+		return math.NaN(), errors.New("request CFF Readback. Bad Target Grid")
 	}
 	if !goodGrids {
-		return math.NaN(), errors.New("Request CFF Readback.")
+		return math.NaN(), errors.New("request CFF Readback")
 	}
 
 	eastingTarget := targetPos[:5]
@@ -403,7 +437,7 @@ func main() {
 	lastCalcMission := FireMission{}
 	var savedMissions []FireMission
 	var err error
-
+	airResistanceBool := false
 	guns := Guns{}
 
 	curGun := Gun{}
@@ -419,7 +453,9 @@ func main() {
 	azimuthBoxGrid := widget.NewLabel("")
 	gunElevationPolar := widget.NewLabel("")
 	gunElevationGrid := widget.NewLabel("")
-
+	airResistance := widget.NewCheck("Air Resistance", func(checked bool) {
+		airResistanceBool = checked
+	})
 	muteButton := widget.NewButton("Toggle Sound", func() {
 		if mute {
 			mute = false
@@ -490,8 +526,8 @@ func main() {
 			return
 		}
 
-		highAngle := CalcAngleHigh(float64(gunAlt), float64(targetAlt), dist, curGun[chargeSelection.Selected])
-		lowAngle := CalcAngleLow(float64(gunAlt), float64(targetAlt), dist, curGun[chargeSelection.Selected])
+		highAngle, haTof := CalcAngleHigh(float64(gunAlt), float64(targetAlt), dist, curGun[chargeSelection.Selected], airResistanceBool)
+		lowAngle, laTof := CalcAngleLow(float64(gunAlt), float64(targetAlt), dist, curGun[chargeSelection.Selected], airResistanceBool)
 		az, err := CalcAzimuth(gunGrid.Text, targetGrid.Text)
 		if err != nil {
 			a.SendNotification(fyne.NewNotification("Error", err.Error()))
@@ -509,9 +545,7 @@ func main() {
 			a.SendNotification(fyne.NewNotification("Error", err.Error()))
 			return
 		}
-		haTof := TimeOfFlight(curGun[chargeSelection.Selected], highAngle/r2m)
-		laTof := TimeOfFlight(curGun[chargeSelection.Selected], lowAngle/r2m)
-		timeOfFlight.SetText(fmt.Sprintf("HA: %s | LA: %s", haTof, laTof))
+		timeOfFlight.SetText(fmt.Sprintf("HA: %f | LA: %f", haTof, laTof))
 		go Solution()
 	})
 
@@ -588,8 +622,8 @@ func main() {
 			return
 		}
 
-		highAngle := CalcAngleHigh(float64(gunAlt), float64(targetAlt), float64(dist), curGun[chargeSelection.Selected])
-		lowAngle := CalcAngleLow(float64(gunAlt), float64(targetAlt), float64(dist), curGun[chargeSelection.Selected])
+		highAngle, haTof := CalcAngleHigh(float64(gunAlt), float64(targetAlt), float64(dist), curGun[chargeSelection.Selected], airResistanceBool)
+		lowAngle, laTof := CalcAngleLow(float64(gunAlt), float64(targetAlt), float64(dist), curGun[chargeSelection.Selected], airResistanceBool)
 		gunElevationPolar.Text = fmt.Sprintf("High Angle: %f | Low Angle: %f", highAngle, lowAngle)
 		gunElevationPolar.Refresh()
 		polarGrid, _ := PolarToGrid(distancePolar.Text, azimuthBoxPolar.Text, gunGrid.Text)
@@ -601,9 +635,7 @@ func main() {
 		lastCalcMission.TargetGrid = polarGrid
 		lastCalcMission.TargetAlt, err = strconv.Atoi(targetAltitude.Text)
 
-		haTof := TimeOfFlight(curGun[chargeSelection.Selected], highAngle/r2m)
-		laTof := TimeOfFlight(curGun[chargeSelection.Selected], lowAngle/r2m)
-		timeOfFlight.SetText(fmt.Sprintf("HA: %s | LA: %s", haTof, laTof))
+		timeOfFlight.SetText(fmt.Sprintf("HA: %f | LA: %f", haTof, laTof))
 		if !mute {
 			go Solution()
 		}
@@ -781,7 +813,7 @@ func main() {
 		widget.NewLabel("Gun to Target Azimuth"), azimuthBoxGrid, widget.NewSeparator(),
 		widget.NewLabel("Gun Elevation"), gunElevationGrid, widget.NewSeparator(),
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
-		container.NewGridWithColumns(2, container.NewHBox(calculateMissionGrid, saveMissionButtonGrid), targetName),
+		container.NewGridWithColumns(2, container.NewHBox(calculateMissionGrid, saveMissionButtonGrid, airResistance), targetName),
 	))
 
 	polarMission := container.NewTabItem("Polar Mission", container.NewVBox(
@@ -793,7 +825,8 @@ func main() {
 		widget.NewLabel("Gun Elevation"), gunElevationPolar, widget.NewSeparator(),
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
 		widget.NewLabel("Target Calculated Grid"), polarGridLabel, widget.NewSeparator(),
-		container.NewHBox(calculateMissionPolar, saveMissionButtonGrid, targetName)))
+		container.NewGridWithColumns(2, container.NewHBox(calculateMissionPolar, saveMissionButtonGrid, airResistance), targetName),
+	))
 
 	savedMissionList := widget.NewList(
 		func() int {
@@ -806,6 +839,33 @@ func main() {
 
 	savedMissionsTab := container.NewTabItem("Saved Missions", savedMissionList)
 
+	pressure := widget.NewEntry()
+	pressure.SetPlaceHolder("Air Pressure (hPA)")
+	temperature := widget.NewEntry()
+	temperature.SetPlaceHolder("Temperature (C)")
+	humidity := widget.NewEntry()
+	humidity.SetPlaceHolder("Humidity (%)")
+	airDensityBox := widget.NewLabel("")
+	airDensityCoefBox := widget.NewLabel("")
+	calcDensity := widget.NewButton("Calculate Air Density", func() {
+		pressureInt, _ := strconv.ParseFloat(pressure.Text, 64)
+		temperatureInt, _ := strconv.ParseFloat(temperature.Text, 64)
+		humidityInt, _ := strconv.ParseFloat(humidity.Text, 64)
+		humidityFloat := float64(humidityInt) / 100
+		pressureFloat := float64(pressureInt) * 100
+		sat := 610.78 * math.Pow(10, (7.5*temperatureInt)/(temperatureInt+237.3))
+		vap := humidityFloat * sat
+		partialPressure := pressureFloat - vap
+		airDensity := (partialPressure*0.028964 + vap*0.018016) / (8.314 * (temperatureInt + 273.15))
+		airDensityCoef := ((airDensity / 1.225) - 1) * 100
+		airDensityBox.SetText(fmt.Sprintf("%f kg/m³", airDensity))
+		airDensityBox.Refresh()
+		airDensityCoefBox.SetText(fmt.Sprintf("%f pct", airDensityCoef))
+		airDensityCoefBox.Refresh()
+	})
+
+	utilityTab := container.NewTabItem("Utilities", container.NewVBox(pressure, temperature, humidity, airDensityBox, airDensityCoefBox, calcDensity))
+
 	infoTab := container.NewTabItemWithIcon("Info", theme.ListIcon(), container.NewVBox(
 		widget.NewLabel("Thanks to the following people:"),
 		widget.NewLabel("Gens - For his original spreadsheet"),
@@ -813,7 +873,7 @@ func main() {
 		muteButton,
 	))
 
-	missionTabs := container.NewAppTabs(gridMission, polarMission, adjustMissions, savedMissionsTab, infoTab)
+	missionTabs := container.NewAppTabs(gridMission, polarMission, adjustMissions, savedMissionsTab, utilityTab, infoTab)
 
 	savedMissionList.OnSelected = func(id widget.ListItemID) {
 
@@ -833,8 +893,8 @@ func main() {
 			a.SendNotification(fyne.NewNotification("Error", err.Error()))
 			return
 		}
-		highAngle := CalcAngleHigh(float64(gunAlt), float64(savedMissions[id].TargetAlt), distanceRecalc, curGun[chargeSelection.Selected])
-		lowAngle := CalcAngleLow(float64(gunAlt), float64(savedMissions[id].TargetAlt), distanceRecalc, curGun[chargeSelection.Selected])
+		highAngle, _ := CalcAngleHigh(float64(gunAlt), float64(savedMissions[id].TargetAlt), distanceRecalc, curGun[chargeSelection.Selected], airResistanceBool)
+		lowAngle, _ := CalcAngleLow(float64(gunAlt), float64(savedMissions[id].TargetAlt), distanceRecalc, curGun[chargeSelection.Selected], airResistanceBool)
 		az, err := CalcAzimuth(gunGrid.Text, targetGrid.Text)
 		if err != nil {
 			a.SendNotification(fyne.NewNotification("Error", err.Error()))
