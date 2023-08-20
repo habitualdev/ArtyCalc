@@ -52,6 +52,8 @@ var testAngle = 0.0
 
 var muz = 0.0
 
+var currentGunString string
+
 func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag bool) (float64, float64) {
 	delta := finalHeight - initHeight
 	tanThetaHigh := (float64(velocity*velocity) + math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
@@ -63,12 +65,19 @@ func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag boo
 	}
 
 	muz = velocity
-	for testAngle = angle; testAngle != 0; testAngle-- {
-		dist, tof := CalculateForAngle(delta, testAngle, muz)
-		if math.Abs(distance-dist) < 2 {
 
+	dist, tof := 0.0, 0.0
+	for numberOfAttempts := 0.0; angle-numberOfAttempts > 800; numberOfAttempts++ {
+		testAngle = angle - numberOfAttempts
+		dist, tof = CalculateForAngle(delta, testAngle, muz)
+		currentError := distance - dist
+		if math.Abs(currentError) < 2 {
 			return testAngle, tof
 		}
+		if currentError < 0 {
+			return testAngle, tof
+		}
+
 	}
 	return 0, 0
 }
@@ -81,10 +90,15 @@ func CalcAngleLow(initHeight, finalHeight, distance, velocity float64, drag bool
 		return angle, TimeOfFlight(velocity, angle)
 	}
 	muz = velocity
-	for testAngle = angle; testAngle != 1600; testAngle++ {
-		dist, tof := CalculateForAngle(delta, testAngle, muz)
-		if math.Abs(distance-dist) < 2 {
-
+	dist, tof := 0.0, 0.0
+	for numberOfAttempts := 0.0; numberOfAttempts+angle < 800; numberOfAttempts++ {
+		testAngle = angle + numberOfAttempts
+		dist, tof = CalculateForAngle(delta, testAngle, muz)
+		currentError := distance - dist
+		if math.Abs(currentError) < 2 {
+			return testAngle, tof
+		}
+		if currentError < 0 {
 			return testAngle, tof
 		}
 	}
@@ -498,6 +512,7 @@ func main() {
 
 	gunSelection := widget.NewSelect(gunList, func(selectedGun string) {
 		curGun = guns[selectedGun]
+		currentGunString = selectedGun
 		curGunCharges = []string{}
 		for charge, _ := range curGun {
 			curGunCharges = append(curGunCharges, charge)

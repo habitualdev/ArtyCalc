@@ -1,9 +1,16 @@
 package main
 
 import (
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"math"
 )
+
+//go:embed drag.json
+var dragTable []byte
+
+type DragTable map[string]float64
 
 const timeStep = 1.0 / 60
 
@@ -57,7 +64,12 @@ func (v vector3) lerp(vector vector3, t float64) vector3 {
 }
 
 func CalculateForAngle(delta, testAngle, muz float64) (float64, float64) {
-	k := -1 * dragCoef * 1
+
+	table := DragTable{}
+	json.Unmarshal(dragTable, &table)
+	trueDrag := table[currentGunString]
+
+	k := -1 * trueDrag * 1
 	temperature := 15.0
 	currentPos := vector3{
 		x: 0,

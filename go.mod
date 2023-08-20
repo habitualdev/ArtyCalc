@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	fyne.io/fyne/v2 v2.3.5
+	github.com/TheDemx27/calculus v0.0.0-20170802071712-c9ac6b2b2cc0
 	github.com/ebitengine/oto/v3 v3.0.0
 	github.com/hajimehoshi/go-mp3 v0.3.4
 )
