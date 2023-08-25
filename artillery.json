@@ -37,5 +37,9 @@
     "Charge 0":	153.9,
     "Charge 1":	243,
     "Charge 2":	388.8
+  },
+  "Type 63 60mm (PF)" : {
+    "Charge 0": 70.0,
+    "Charge 1": 140.0
   }
 }

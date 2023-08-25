@@ -1,13 +1,13 @@
 package main
 
 import (
-	"C"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -16,6 +16,9 @@ import (
 	"strings"
 	"time"
 )
+
+//go:embed degrees_mills.png
+var degreeMils []byte
 
 //go:embed artillery.json
 var artilleryJson []byte
@@ -56,12 +59,12 @@ var currentGunString string
 
 func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag bool) (float64, float64) {
 	delta := finalHeight - initHeight
-	tanThetaHigh := (float64(velocity*velocity) + math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
+	tanThetaHigh := ((velocity * velocity) + math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
 
 	angle := math.Atan(tanThetaHigh) * r2m
 
 	if !drag {
-		return angle, TimeOfFlight(velocity, angle)
+		return angle, TimeOfFlight(velocity, angle/r2m)
 	}
 
 	muz = velocity
@@ -84,10 +87,10 @@ func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag boo
 
 func CalcAngleLow(initHeight, finalHeight, distance, velocity float64, drag bool) (float64, float64) {
 	delta := finalHeight - initHeight
-	tanThetaLow := (float64(velocity*velocity) - math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
+	tanThetaLow := ((velocity * velocity) - math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
 	angle := math.Atan(tanThetaLow) * r2m
 	if !drag {
-		return angle, TimeOfFlight(velocity, angle)
+		return angle, TimeOfFlight(velocity, angle/r2m)
 	}
 	muz = velocity
 	dist, tof := 0.0, 0.0
@@ -107,7 +110,6 @@ func CalcAngleLow(initHeight, finalHeight, distance, velocity float64, drag bool
 
 func TimeOfFlight(velocity, angle float64) float64 {
 	tof := (2 * velocity * math.Sin(angle)) / g
-
 	return tof
 }
 
@@ -703,7 +705,7 @@ func main() {
 			a.SendNotification(fyne.NewNotification("Error", "Check your box size"))
 			return
 		}
-		boxSpread, err := strconv.Atoi(boxSpread.Text)
+		boxSpreadInt, err := strconv.Atoi(boxSpread.Text)
 		if err != nil {
 			a.SendNotification(fyne.NewNotification("Error", "Check your box spread"))
 			return
@@ -718,7 +720,7 @@ func main() {
 		distance, _ := CalcDistance(gunGrid.Text, lastCalcMission.TargetGrid)
 		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
 
-		shots := BoxSheaf(float64(boxSizeInt), float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(boxSpread), origAz, curGun[chargeSelection.Selected])
+		shots := BoxSheaf(float64(boxSizeInt), float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(boxSpreadInt), origAz, curGun[chargeSelection.Selected])
 		shotWindow := a.NewWindow("Box Sheaf")
 		closeButton := widget.NewButton("Close", func() {
 			shotWindow.Close()
@@ -879,7 +881,28 @@ func main() {
 		airDensityCoefBox.Refresh()
 	})
 
-	utilityTab := container.NewTabItem("Utilities", container.NewVBox(pressure, temperature, humidity, airDensityBox, airDensityCoefBox, calcDensity))
+	degreesToMilsCalcLabel := widget.NewLabel("")
+	degreesToMilsCalcEntry := widget.NewEntry()
+	degreesToMilsCalcEntry.SetPlaceHolder("Degrees")
+	degreesToMilsCalcButton := widget.NewButton("Calculate", func() {
+		degreesInt, err := strconv.Atoi(degreesToMilsCalcEntry.Text)
+		if err != nil {
+			return
+		}
+		mils := float64(degreesInt) * 17.777778
+
+		degreesToMilsCalcLabel.SetText(fmt.Sprintf("%f", mils))
+		degreesToMilsCalcLabel.Refresh()
+
+	})
+
+	degreesMilsImage := canvas.NewImageFromResource(fyne.NewStaticResource("degreesToMils", degreeMils))
+	degreesMilsImage.FillMode = canvas.ImageFillOriginal
+
+	utilityTab := container.NewTabItem("Utilities", container.NewHScroll(container.NewVBox(widget.NewLabel("Air Density Calculator"),
+		pressure, temperature, humidity, airDensityBox, airDensityCoefBox, calcDensity, widget.NewSeparator(),
+		degreesMilsImage, widget.NewSeparator(), widget.NewLabel("Degrees to Mils Conversions"), degreesToMilsCalcEntry,
+		degreesToMilsCalcLabel, degreesToMilsCalcButton)))
 
 	infoTab := container.NewTabItemWithIcon("Info", theme.ListIcon(), container.NewVBox(
 		widget.NewLabel("Thanks to the following people:"),
