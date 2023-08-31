@@ -802,7 +802,7 @@ func main() {
 	linearCount.PlaceHolder = "Number of shots"
 	linearDispersion.PlaceHolder = "Dispersion of rounds"
 	linearDirection.PlaceHolder = "Direction of Shift"
-	adjustMissions := container.NewTabItem("Adjustments", container.NewVBox(
+	adjustMissions := container.NewTabItem("Adjustments", container.NewVScroll(container.NewVBox(
 		widget.NewLabel("Observer to Target Adjusts"),
 		otlDirection,
 		otlAngle,
@@ -820,9 +820,9 @@ func main() {
 		linearDispersion,
 		linearCount,
 		linearCalculate,
-	))
+	)))
 
-	gridMission := container.NewTabItem("Grid Missions", container.NewVBox(
+	gridMission := container.NewTabItem("Grid Missions", container.NewVScroll(container.NewVBox(
 		widget.NewLabel("Gun Position"), gunGrid, widget.NewSeparator(),
 		widget.NewLabel("Gun Altitude"), gunAltitude, widget.NewSeparator(),
 		widget.NewLabel("Target Grid"), targetGrid, widget.NewSeparator(),
@@ -831,9 +831,9 @@ func main() {
 		widget.NewLabel("Gun Elevation"), gunElevationGrid, widget.NewSeparator(),
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
 		container.NewGridWithColumns(2, container.NewHBox(calculateMissionGrid, saveMissionButtonGrid, airResistance), targetName),
-	))
+	)))
 
-	polarMission := container.NewTabItem("Polar Mission", container.NewVBox(
+	polarMission := container.NewTabItem("Polar Mission", container.NewVScroll(container.NewVBox(
 		widget.NewLabel("Gun Position"), gunGrid, widget.NewSeparator(),
 		widget.NewLabel("Gun Altitude"), gunAltitude, widget.NewSeparator(),
 		widget.NewLabel("Gun to Target Azimuth"), azimuthBoxPolar, widget.NewSeparator(),
@@ -843,7 +843,7 @@ func main() {
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
 		widget.NewLabel("Target Calculated Grid"), polarGridLabel, widget.NewSeparator(),
 		container.NewGridWithColumns(2, container.NewHBox(calculateMissionPolar, saveMissionButtonGrid, airResistance), targetName),
-	))
+	)))
 
 	savedMissionList := widget.NewList(
 		func() int {
@@ -854,7 +854,7 @@ func main() {
 			object.(*widget.Label).SetText(savedMissions[id].Name)
 		})
 
-	savedMissionsTab := container.NewTabItem("Saved Missions", savedMissionList)
+	savedMissionsTab := container.NewTabItem("Saved Missions", container.NewVScroll(savedMissionList))
 
 	pressure := widget.NewEntry()
 	pressure.SetPlaceHolder("Air Pressure (hPA)")
@@ -899,7 +899,7 @@ func main() {
 	degreesMilsImage := canvas.NewImageFromResource(fyne.NewStaticResource("degreesToMils", degreeMils))
 	degreesMilsImage.FillMode = canvas.ImageFillOriginal
 
-	utilityTab := container.NewTabItem("Utilities", container.NewHScroll(container.NewVBox(widget.NewLabel("Air Density Calculator"),
+	utilityTab := container.NewTabItem("Utilities", container.NewVScroll(container.NewVBox(widget.NewLabel("Air Density Calculator"),
 		pressure, temperature, humidity, airDensityBox, airDensityCoefBox, calcDensity, widget.NewSeparator(),
 		degreesMilsImage, widget.NewSeparator(), widget.NewLabel("Degrees to Mils Conversions"), degreesToMilsCalcEntry,
 		degreesToMilsCalcLabel, degreesToMilsCalcButton)))

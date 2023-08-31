@@ -41,5 +41,15 @@
   "Type 63 60mm (PF)" : {
     "Charge 0": 70.0,
     "Charge 1": 140.0
+  },
+  "H12 Rocket Launcher (PF)" : {
+    "Charge 0":	114.8,
+    "Charge 1":	130.1,
+    "Charge 2":	148.8,
+    "Charge 3":	170,
+    "Charge 4": 193.8,
+    "Charge 5":	221.9,
+    "Charge 6":	255,
+    "Charge 7":	289.9
   }
 }
