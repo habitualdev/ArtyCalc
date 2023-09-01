@@ -113,7 +113,7 @@ func TimeOfFlight(velocity, angle float64) float64 {
 	return tof
 }
 
-func LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, shiftAzimuth, azimuth, velocity float64) string {
+func LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, shiftAzimuth, azimuth, velocity float64, drag bool) string {
 	xo := origDistance * math.Cos(azimuth/r2m)
 
 	yo := origDistance * math.Sin(azimuth/r2m)
@@ -153,13 +153,13 @@ func LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, shiftAzim
 		newAz = newAz + 6400
 	}
 
-	low, _ := CalcAngleLow(gunHeight, targetHeight, newDistance, velocity, true)
-	high, _ := CalcAngleHigh(gunHeight, targetHeight, newDistance, velocity, true)
+	low, _ := CalcAngleLow(gunHeight, targetHeight, newDistance, velocity, drag)
+	high, _ := CalcAngleHigh(gunHeight, targetHeight, newDistance, velocity, drag)
 
 	return fmt.Sprintf("Azimuth: %d | HA: %d | LA: %d", newAz, int(high), int(low))
 }
 
-func OTLAdjust(gunHeight, targetHeight, origDistance, shiftDistance, otlAzimuth, azimuth, velocity float64, direction string) string {
+func OTLAdjust(gunHeight, targetHeight, origDistance, shiftDistance, otlAzimuth, azimuth, velocity float64, direction string, drag bool) string {
 	adjustAzimuth := otlAzimuth
 	switch direction {
 	case "Left":
@@ -181,10 +181,10 @@ func OTLAdjust(gunHeight, targetHeight, origDistance, shiftDistance, otlAzimuth,
 		break
 	}
 
-	return LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, adjustAzimuth, azimuth, velocity)
+	return LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, adjustAzimuth, azimuth, velocity, drag)
 }
 
-func BoxSheaf(width, gunHeight, targetHeight, origDistance, shiftDistance, azimuth, velocity float64) []string {
+func BoxSheaf(width, gunHeight, targetHeight, origDistance, shiftDistance, azimuth, velocity float64, drag bool) []string {
 	shots := []string{"Impacts work from Top Left (original point) to Bottom Right"}
 	shotsPerSide := width / shiftDistance
 
@@ -195,7 +195,7 @@ func BoxSheaf(width, gunHeight, targetHeight, origDistance, shiftDistance, azimu
 
 	for i := 0.0; i <= shotsPerSide; i++ {
 		for j := 0.0; j <= shotsPerSide; j++ {
-			shot := LinearSheaf(gunHeight, targetHeight, origDistance-(i*shiftDistance), j*shiftDistance, rightAz, azimuth, velocity)
+			shot := LinearSheaf(gunHeight, targetHeight, origDistance-(i*shiftDistance), j*shiftDistance, rightAz, azimuth, velocity, drag)
 			shots = append(shots, shot)
 		}
 	}
@@ -688,7 +688,7 @@ func main() {
 		distance, _ := CalcDistance(gunGrid.Text, lastCalcMission.TargetGrid)
 		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
 		otlCalc.SetText(OTLAdjust(float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(otlDistInt),
-			float64(otlAngleInt), origAz, curGun[chargeSelection.Selected], otlDistance.SelectedText()))
+			float64(otlAngleInt), origAz, curGun[chargeSelection.Selected], otlDistance.SelectedText(), airResistanceBool))
 		if !mute {
 			go Solution()
 		}
@@ -720,7 +720,7 @@ func main() {
 		distance, _ := CalcDistance(gunGrid.Text, lastCalcMission.TargetGrid)
 		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
 
-		shots := BoxSheaf(float64(boxSizeInt), float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(boxSpreadInt), origAz, curGun[chargeSelection.Selected])
+		shots := BoxSheaf(float64(boxSizeInt), float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(boxSpreadInt), origAz, curGun[chargeSelection.Selected], airResistanceBool)
 		shotWindow := a.NewWindow("Box Sheaf")
 		closeButton := widget.NewButton("Close", func() {
 			shotWindow.Close()
@@ -774,7 +774,7 @@ func main() {
 		distance, _ := CalcDistance(gunGrid.Text, lastCalcMission.TargetGrid)
 		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
 		for i := 0; i <= numShots; i++ {
-			nextTarget := LinearSheaf(float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(dispersion*i), float64(linearAz), origAz, curGun[chargeSelection.Selected])
+			nextTarget := LinearSheaf(float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(dispersion*i), float64(linearAz), origAz, curGun[chargeSelection.Selected], airResistanceBool)
 			shots = append(shots, nextTarget)
 		}
 
