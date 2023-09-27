@@ -2,3 +2,5 @@
 fyne-cross
 fyne_metadata_init.go
 xcode
+docker
+build.ps1

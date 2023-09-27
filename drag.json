@@ -7,5 +7,7 @@
   "M29 81mm (PF)" : -0.00006,
   "M101 105mm (PF)" : -0.00006,
   "Type 63 60mm (PF)" : -0.00006,
-  "H12 Rocket Launcher (PF)" : -0.00006
+  "H12 Rocket Launcher (PF)" : -0.00006,
+  "M6 Mortar (3CB)": -0.0001,
+  "L16 (3CB)" : -0.0001
 }

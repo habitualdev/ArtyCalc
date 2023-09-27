@@ -13,3 +13,12 @@ type FireMission struct {
 	TargetGrid string
 	TargetAlt  int
 }
+
+type FireMissions []FireMission
+
+func (f FireMissions) Remove(i int) FireMissions {
+	if i >= len(f) {
+		return f
+	}
+	return append(f[:i], f[i+1:]...)
+}

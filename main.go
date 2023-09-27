@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -9,8 +10,14 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
+	"image"
+	"image/png"
 	"math"
 	"strconv"
 	"strings"
@@ -56,6 +63,11 @@ var testAngle = 0.0
 var muz = 0.0
 
 var currentGunString string
+
+type BallisticPoint struct {
+	X float64
+	Y float64
+}
 
 func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag bool) (float64, float64) {
 	delta := finalHeight - initHeight
@@ -449,9 +461,77 @@ func CalcAzimuth(gunPos, targetPos string) (float64, error) {
 
 }
 
+func GraphShotNoDrag(distance, azimuth, muzzleVelocity, gunAltitude, targetAltitude float64, lowHigh string) image.Image {
+	p := plot.New()
+	p.Title.Text = "Ballistic Solution - " + lowHigh
+	p.X.Label.Text = "Distance"
+	p.Y.Label.Text = "Elevation"
+
+	p.X.Min = 0
+	p.X.Max = distance
+	p.Y.Max = distance
+	p.Y.Min = 0
+
+	p.Y.AutoRescale = true
+
+	velocityY := muzzleVelocity * math.Sin(azimuth/r2m)
+	velocityX := muzzleVelocity * math.Cos(azimuth/r2m)
+
+	timeTick := 1.0 / 60.0
+	t := 0.0
+	BallisticPath := []BallisticPoint{}
+
+	apex := 0.0
+
+	for {
+		newX := velocityX * t
+		newY := velocityY*t + (-9.8*t*t)/2
+		newY = newY + gunAltitude
+		if newY > apex {
+			apex = newY
+		}
+		BallisticPath = append(BallisticPath, BallisticPoint{X: newX, Y: newY})
+		t = t + timeTick
+		if newX > distance {
+			break
+		}
+	}
+
+	pts := make(plotter.XYs, len(BallisticPath))
+	for i, p := range BallisticPath {
+		pts[i].X = p.X
+		pts[i].Y = p.Y
+	}
+
+	plotBallistics, err := plotter.NewLine(pts)
+
+	if err != nil {
+		panic(err)
+	}
+	p.Add(plotBallistics)
+
+	apexString := fmt.Sprintf("%.2f", apex)
+
+	p.Legend.Add("Apex - "+apexString, plotBallistics)
+	p.Legend.ThumbnailWidth = 0
+
+	wt, err := p.WriterTo(4*vg.Inch, 4*vg.Inch, "png")
+	if err != nil {
+		panic(err)
+	}
+	buf := new(bytes.Buffer)
+	_, err = wt.WriteTo(buf)
+	if err != nil {
+		panic(err)
+	}
+	img, err := png.Decode(buf)
+
+	return img
+}
+
 func main() {
 	lastCalcMission := FireMission{}
-	var savedMissions []FireMission
+	var savedMissions FireMissions
 	var err error
 	airResistanceBool := false
 	guns := Guns{}
@@ -524,6 +604,9 @@ func main() {
 
 	gunSelectRow := container.NewHBox(gunSelection, chargeSelection)
 
+	highAngleImage := canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 100, 100)))
+	lowAngleImage := canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 100, 100)))
+
 	calculateMissionGrid := widget.NewButton("Calculate Mission", func() {
 		dist, err := CalcDistance(gunGrid.Text, targetGrid.Text)
 		if err != nil {
@@ -543,8 +626,31 @@ func main() {
 			return
 		}
 
+		if curGun == nil {
+			a.SendNotification(fyne.NewNotification("Error", "No gun selected"))
+			return
+		}
+
+		if chargeSelection.Selected == "" {
+			a.SendNotification(fyne.NewNotification("Error", "No charge selected"))
+			return
+		}
+
 		highAngle, haTof := CalcAngleHigh(float64(gunAlt), float64(targetAlt), dist, curGun[chargeSelection.Selected], airResistanceBool)
 		lowAngle, laTof := CalcAngleLow(float64(gunAlt), float64(targetAlt), dist, curGun[chargeSelection.Selected], airResistanceBool)
+
+		lowAngleGraph := GraphShotNoDrag(dist, lowAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "Low Angle")
+		highAngleGraph := GraphShotNoDrag(dist, highAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "High Angle")
+
+		highAngleImage.Image = highAngleGraph
+		lowAngleImage.Image = lowAngleGraph
+
+		highAngleImage.FillMode = canvas.ImageFillOriginal
+		lowAngleImage.FillMode = canvas.ImageFillOriginal
+
+		highAngleImage.Refresh()
+		lowAngleImage.Refresh()
+
 		az, err := CalcAzimuth(gunGrid.Text, targetGrid.Text)
 		if err != nil {
 			a.SendNotification(fyne.NewNotification("Error", err.Error()))
@@ -639,8 +745,31 @@ func main() {
 			return
 		}
 
+		if curGun == nil {
+			a.SendNotification(fyne.NewNotification("Error", "No gun selected"))
+			return
+		}
+
+		if chargeSelection.Selected == "" {
+			a.SendNotification(fyne.NewNotification("Error", "No charge selected"))
+			return
+		}
+
 		highAngle, haTof := CalcAngleHigh(float64(gunAlt), float64(targetAlt), float64(dist), curGun[chargeSelection.Selected], airResistanceBool)
 		lowAngle, laTof := CalcAngleLow(float64(gunAlt), float64(targetAlt), float64(dist), curGun[chargeSelection.Selected], airResistanceBool)
+
+		lowAngleGraph := GraphShotNoDrag(float64(dist), lowAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "Low Angle")
+		highAngleGraph := GraphShotNoDrag(float64(dist), highAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "High Angle")
+
+		highAngleImage.Image = highAngleGraph
+		lowAngleImage.Image = lowAngleGraph
+
+		highAngleImage.FillMode = canvas.ImageFillOriginal
+		lowAngleImage.FillMode = canvas.ImageFillOriginal
+
+		highAngleImage.Refresh()
+		lowAngleImage.Refresh()
+
 		gunElevationPolar.Text = fmt.Sprintf("High Angle: %f | Low Angle: %f", highAngle, lowAngle)
 		gunElevationPolar.Refresh()
 		polarGrid, _ := PolarToGrid(distancePolar.Text, azimuthBoxPolar.Text, gunGrid.Text)
@@ -731,7 +860,7 @@ func main() {
 			}, func() fyne.CanvasObject {
 				return widget.NewLabel("")
 			}, func(id widget.ListItemID, object fyne.CanvasObject) {
-				object.(*widget.Label).SetText(shots[id])
+				object.(*widget.Label).SetText(strconv.Itoa(id) + ": " + shots[id])
 			})))
 		shotWindow.Resize(fyne.Size{
 			Width:  500,
@@ -789,7 +918,7 @@ func main() {
 			}, func() fyne.CanvasObject {
 				return widget.NewLabel("")
 			}, func(id widget.ListItemID, object fyne.CanvasObject) {
-				object.(*widget.Label).SetText(shots[id])
+				object.(*widget.Label).SetText(strconv.Itoa(id) + ": " + shots[id])
 			})))
 		shotWindow.Resize(fyne.Size{
 			Width:  500,
@@ -831,6 +960,7 @@ func main() {
 		widget.NewLabel("Gun Elevation"), gunElevationGrid, widget.NewSeparator(),
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
 		container.NewGridWithColumns(2, container.NewHBox(calculateMissionGrid, saveMissionButtonGrid, airResistance), targetName),
+		container.NewHScroll(container.NewHBox(highAngleImage, lowAngleImage)),
 	)))
 
 	polarMission := container.NewTabItem("Polar Mission", container.NewVScroll(container.NewVBox(
@@ -843,6 +973,7 @@ func main() {
 		widget.NewLabel("Time Of Flight"), timeOfFlight, widget.NewSeparator(),
 		widget.NewLabel("Target Calculated Grid"), polarGridLabel, widget.NewSeparator(),
 		container.NewGridWithColumns(2, container.NewHBox(calculateMissionPolar, saveMissionButtonGrid, airResistance), targetName),
+		container.NewHScroll(container.NewHBox(highAngleImage, lowAngleImage)),
 	)))
 
 	savedMissionList := widget.NewList(
@@ -851,10 +982,25 @@ func main() {
 		}, func() fyne.CanvasObject {
 			return widget.NewLabel("")
 		}, func(id widget.ListItemID, object fyne.CanvasObject) {
-			object.(*widget.Label).SetText(savedMissions[id].Name)
+			object.(*widget.Label).SetText(fmt.Sprintf("%d", id) + ": " + savedMissions[id].Name)
 		})
 
-	savedMissionsTab := container.NewTabItem("Saved Missions", container.NewVScroll(savedMissionList))
+	deleteMission := widget.NewButton("Delete Mission", func() {
+		if len(savedMissions) == 0 {
+			return
+		}
+		popup := dialog.NewEntryDialog("Delete Mission", "Enter Mission Number", func(s string) {
+			missionInt, err := strconv.Atoi(s)
+			if err != nil {
+				return
+			}
+			savedMissions = savedMissions.Remove(missionInt)
+			savedMissionList.Refresh()
+		}, w)
+		popup.Show()
+	})
+
+	savedMissionsTab := container.NewTabItem("Saved Missions", container.NewBorder(nil, deleteMission, nil, nil, savedMissionList))
 
 	pressure := widget.NewEntry()
 	pressure.SetPlaceHolder("Air Pressure (hPA)")
