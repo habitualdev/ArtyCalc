@@ -99,7 +99,14 @@ func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag boo
 
 func CalcAngleLow(initHeight, finalHeight, distance, velocity float64, drag bool) (float64, float64) {
 	delta := finalHeight - initHeight
-	tanThetaLow := ((velocity * velocity) - math.Sqrt(velocity*velocity*velocity*velocity-(g*(g*(distance*distance)+(2*delta)*(velocity*velocity))))) / (g * distance)
+
+	coefComp := math.Sqrt(velocity*velocity*velocity*velocity - (g * (g*(distance*distance) + (2*delta)*(velocity*velocity))))
+	if coefComp == math.NaN() {
+		return 0, 0
+	}
+
+	tanThetaLow := ((velocity * velocity) - coefComp) / (g * distance)
+
 	angle := math.Atan(tanThetaLow) * r2m
 	if !drag {
 		return angle, TimeOfFlight(velocity, angle/r2m)
@@ -462,6 +469,10 @@ func CalcAzimuth(gunPos, targetPos string) (float64, error) {
 }
 
 func GraphShotNoDrag(distance, azimuth, muzzleVelocity, gunAltitude, targetAltitude float64, lowHigh string) image.Image {
+	if azimuth < 0 || azimuth > 1600 || math.IsNaN(azimuth) {
+		return image.NewRGBA(image.Rect(0, 0, 100, 100))
+	}
+
 	p := plot.New()
 	p.Title.Text = "Ballistic Solution - " + lowHigh
 	p.X.Label.Text = "Distance"
@@ -493,6 +504,9 @@ func GraphShotNoDrag(distance, azimuth, muzzleVelocity, gunAltitude, targetAltit
 		BallisticPath = append(BallisticPath, BallisticPoint{X: newX, Y: newY})
 		t = t + timeTick
 		if newX > distance {
+			break
+		}
+		if t > 300 {
 			break
 		}
 	}

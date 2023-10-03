@@ -66,5 +66,27 @@
     "CH4" : 253.0,
     "CH5" : 284.0,
     "CH6" : 314.0
+  },
+  "2S3M1 (RHS)": {
+    "Charge 0": 167.7,
+    "Charge 1": 195.2,
+    "Charge 2": 226.6,
+    "Charge 3": 262,
+    "Charge 4": 307.9,
+    "Charge 5": 353.7,
+    "Charge 6": 415.3
+  },
+  "2S1/D-30A": {
+    "Charge 0": 179.4,
+    "Charge 1": 220.8,
+    "Charge 2": 269.1,
+    "Charge 3": 303.6,
+    "Charge 4": 345,
+    "Charge 5": 389.2
+  },
+  "2B14-1 Podnos": {
+    "Charge 0": 73.8,
+    "Charge 1": 147.7,
+    "Charge 2": 211
   }
 }
