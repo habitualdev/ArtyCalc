@@ -64,6 +64,10 @@ var muz = 0.0
 
 var currentGunString string
 
+var lastVectorPlotHigh plotter.XYs
+
+var lastVectorPlotLow plotter.XYs
+
 type BallisticPoint struct {
 	X float64
 	Y float64
@@ -80,11 +84,10 @@ func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag boo
 	}
 
 	muz = velocity
-
 	dist, tof := 0.0, 0.0
 	for numberOfAttempts := 0.0; angle-numberOfAttempts > 800; numberOfAttempts++ {
 		testAngle = angle - numberOfAttempts
-		dist, tof = CalculateForAngle(delta, testAngle, muz)
+		dist, tof, lastVectorPlotHigh = CalculateForAngle(delta, testAngle, muz)
 		currentError := distance - dist
 		if math.Abs(currentError) < 2 {
 			return testAngle, tof
@@ -115,7 +118,7 @@ func CalcAngleLow(initHeight, finalHeight, distance, velocity float64, drag bool
 	dist, tof := 0.0, 0.0
 	for numberOfAttempts := 0.0; numberOfAttempts+angle < 800; numberOfAttempts++ {
 		testAngle = angle + numberOfAttempts
-		dist, tof = CalculateForAngle(delta, testAngle, muz)
+		dist, tof, lastVectorPlotLow = CalculateForAngle(delta, testAngle, muz)
 		currentError := distance - dist
 		if math.Abs(currentError) < 2 {
 			return testAngle, tof
@@ -543,6 +546,48 @@ func GraphShotNoDrag(distance, azimuth, muzzleVelocity, gunAltitude, targetAltit
 	return img
 }
 
+func GraphShotDrag(dataPoints plotter.XYs, distance float64, lowHigh string) image.Image {
+	dataGraph, _ := plotter.NewLine(dataPoints)
+	maxOrd := 0.0
+	for _, y := range dataPoints {
+		if y.Y > maxOrd {
+			maxOrd = y.Y
+		}
+	}
+
+	p := plot.New()
+	p.Title.Text = "Ballistic Solution - " + lowHigh
+	p.X.Label.Text = "Distance"
+	p.Y.Label.Text = "Elevation"
+
+	p.X.Min = 0
+	p.X.Max = distance
+	p.Y.Max = distance
+	p.Y.Min = 0
+
+	p.Y.AutoRescale = true
+
+	p.Add(dataGraph)
+
+	apexString := fmt.Sprintf("%.2f", maxOrd)
+
+	p.Legend.Add("Apex - "+apexString, dataGraph)
+	p.Legend.ThumbnailWidth = 0
+	wt, err := p.WriterTo(4*vg.Inch, 4*vg.Inch, "png")
+	if err != nil {
+		panic(err)
+	}
+	buf := new(bytes.Buffer)
+	_, err = wt.WriteTo(buf)
+	if err != nil {
+		panic(err)
+	}
+	img, err := png.Decode(buf)
+
+	return img
+
+}
+
 func main() {
 	lastCalcMission := FireMission{}
 	var savedMissions FireMissions
@@ -653,17 +698,32 @@ func main() {
 		highAngle, haTof := CalcAngleHigh(float64(gunAlt), float64(targetAlt), dist, curGun[chargeSelection.Selected], airResistanceBool)
 		lowAngle, laTof := CalcAngleLow(float64(gunAlt), float64(targetAlt), dist, curGun[chargeSelection.Selected], airResistanceBool)
 
-		lowAngleGraph := GraphShotNoDrag(dist, lowAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "Low Angle")
-		highAngleGraph := GraphShotNoDrag(dist, highAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "High Angle")
+		switch airResistanceBool {
+		case false:
+			lowAngleGraph := GraphShotNoDrag(dist, lowAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "Low Angle")
+			highAngleGraph := GraphShotNoDrag(dist, highAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "High Angle")
 
-		highAngleImage.Image = highAngleGraph
-		lowAngleImage.Image = lowAngleGraph
+			highAngleImage.Image = highAngleGraph
+			lowAngleImage.Image = lowAngleGraph
 
-		highAngleImage.FillMode = canvas.ImageFillOriginal
-		lowAngleImage.FillMode = canvas.ImageFillOriginal
+			highAngleImage.FillMode = canvas.ImageFillOriginal
+			lowAngleImage.FillMode = canvas.ImageFillOriginal
 
-		highAngleImage.Refresh()
-		lowAngleImage.Refresh()
+			highAngleImage.Refresh()
+			lowAngleImage.Refresh()
+		case true:
+			lowAngleGraph := GraphShotDrag(lastVectorPlotLow, dist, "Low Angle")
+			highAngleGraph := GraphShotDrag(lastVectorPlotHigh, dist, "High Angle")
+
+			highAngleImage.Image = highAngleGraph
+			lowAngleImage.Image = lowAngleGraph
+
+			highAngleImage.FillMode = canvas.ImageFillOriginal
+			lowAngleImage.FillMode = canvas.ImageFillOriginal
+
+			highAngleImage.Refresh()
+			lowAngleImage.Refresh()
+		}
 
 		az, err := CalcAzimuth(gunGrid.Text, targetGrid.Text)
 		if err != nil {
@@ -772,17 +832,32 @@ func main() {
 		highAngle, haTof := CalcAngleHigh(float64(gunAlt), float64(targetAlt), float64(dist), curGun[chargeSelection.Selected], airResistanceBool)
 		lowAngle, laTof := CalcAngleLow(float64(gunAlt), float64(targetAlt), float64(dist), curGun[chargeSelection.Selected], airResistanceBool)
 
-		lowAngleGraph := GraphShotNoDrag(float64(dist), lowAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "Low Angle")
-		highAngleGraph := GraphShotNoDrag(float64(dist), highAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "High Angle")
+		switch airResistanceBool {
+		case false:
+			lowAngleGraph := GraphShotNoDrag(float64(dist), lowAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "Low Angle")
+			highAngleGraph := GraphShotNoDrag(float64(dist), highAngle, curGun[chargeSelection.Selected], float64(gunAlt), float64(targetAlt), "High Angle")
 
-		highAngleImage.Image = highAngleGraph
-		lowAngleImage.Image = lowAngleGraph
+			highAngleImage.Image = highAngleGraph
+			lowAngleImage.Image = lowAngleGraph
 
-		highAngleImage.FillMode = canvas.ImageFillOriginal
-		lowAngleImage.FillMode = canvas.ImageFillOriginal
+			highAngleImage.FillMode = canvas.ImageFillOriginal
+			lowAngleImage.FillMode = canvas.ImageFillOriginal
 
-		highAngleImage.Refresh()
-		lowAngleImage.Refresh()
+			highAngleImage.Refresh()
+			lowAngleImage.Refresh()
+		case true:
+			lowAngleGraph := GraphShotDrag(lastVectorPlotLow, float64(dist), "Low Angle")
+			highAngleGraph := GraphShotDrag(lastVectorPlotHigh, float64(dist), "High Angle")
+
+			highAngleImage.Image = highAngleGraph
+			lowAngleImage.Image = lowAngleGraph
+
+			highAngleImage.FillMode = canvas.ImageFillOriginal
+			lowAngleImage.FillMode = canvas.ImageFillOriginal
+
+			highAngleImage.Refresh()
+			lowAngleImage.Refresh()
+		}
 
 		gunElevationPolar.Text = fmt.Sprintf("High Angle: %f | Low Angle: %f", highAngle, lowAngle)
 		gunElevationPolar.Refresh()

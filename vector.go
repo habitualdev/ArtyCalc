@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"gonum.org/v1/plot/plotter"
 	"math"
 )
 
@@ -63,8 +64,8 @@ func (v vector3) lerp(vector vector3, t float64) vector3 {
 	return a.add(b)
 }
 
-func CalculateForAngle(delta, testAngle, muz float64) (float64, float64) {
-
+func CalculateForAngle(delta, testAngle, muz float64) (float64, float64, plotter.XYs) {
+	newPlot := plotter.XYs{}
 	table := DragTable{}
 	json.Unmarshal(dragTable, &table)
 	trueDrag := table[currentGunString]
@@ -111,10 +112,14 @@ func CalculateForAngle(delta, testAngle, muz float64) (float64, float64) {
 			y: currentPos.y + (currentVelocity.y * timeStep),
 		}
 		currentTime += timeStep
+		newPlot = append(newPlot, plotter.XY{
+			X: currentPos.x,
+			Y: currentPos.y,
+		})
 	}
 
 	lastRatio := (delta - currentPos.y) / (lastPos.y - currentPos.y)
 
-	return lastPos.lerp(currentPos, lastRatio).x, currentTime
+	return lastPos.lerp(currentPos, lastRatio).x, currentTime, newPlot
 
 }
