@@ -225,6 +225,23 @@ func BoxSheaf(width, gunHeight, targetHeight, origDistance, shiftDistance, azimu
 	return shots
 }
 
+func DrawARect(originalPoint string, width, height, spread, orientation float64) []string {
+	shots := []string{"Impacts work from Top Left (original point) to Bottom Right"}
+
+	numShotsX := width / spread
+	numShotsY := height / spread
+
+	for i := 0.0; i <= numShotsX; i++ {
+
+		startPoint, _ := PolarToGrid(strconv.Itoa(int(spread*i)), strconv.Itoa(int(orientation+1600)), originalPoint)
+		for j := 0.0; j <= numShotsY; j++ {
+			newGrid, _ := PolarToGrid(strconv.Itoa(int(spread*j)), strconv.Itoa(int(orientation)), startPoint)
+			shots = append(shots, newGrid)
+		}
+	}
+	return shots
+}
+
 func PolarToGrid(distance, azimuth, gunPos string) (string, error) {
 
 	distanceFloat, err := strconv.ParseFloat(distance, 64)
@@ -913,12 +930,17 @@ func main() {
 		otlCalc.Refresh()
 	})
 
-	boxSize := widget.NewEntry()
+	boxWidth := widget.NewEntry()
 	boxSpread := widget.NewEntry()
-	boxSize.PlaceHolder = "Size of Box Sheaf"
+	boxHeight := widget.NewEntry()
+	boxOrientation := widget.NewEntry()
+
+	boxWidth.PlaceHolder = "Width of Box"
+	boxHeight.PlaceHolder = "Height of Box"
 	boxSpread.PlaceHolder = "Distance between Shots"
+	boxOrientation.PlaceHolder = "Orientation of Box (Mils)"
 	boxCalculate := widget.NewButton("Calculate Box Sheaf", func() {
-		boxSizeInt, err := strconv.Atoi(boxSize.Text)
+		boxWidthInt, err := strconv.Atoi(boxWidth.Text)
 		if err != nil {
 			a.SendNotification(fyne.NewNotification("Error", "Check your box size"))
 			return
@@ -935,10 +957,44 @@ func main() {
 			return
 		}
 
-		distance, _ := CalcDistance(gunGrid.Text, lastCalcMission.TargetGrid)
-		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
+		boxOrientationInt, err := strconv.Atoi(boxOrientation.Text)
+		if err != nil {
+			a.SendNotification(fyne.NewNotification("Error", "Check your dispersion distance"))
+			return
+		}
 
-		shots := BoxSheaf(float64(boxSizeInt), float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(boxSpreadInt), origAz, curGun[chargeSelection.Selected], airResistanceBool)
+		boxHeightInt, err := strconv.Atoi(boxHeight.Text)
+		if err != nil {
+			a.SendNotification(fyne.NewNotification("Error", "Check your dispersion distance"))
+			return
+		}
+
+		if err != nil {
+			a.SendNotification(fyne.NewNotification("Error", "Check your dispersion distance"))
+			return
+		}
+
+		shotsGrids := DrawARect(lastCalcMission.TargetGrid, float64(boxWidthInt), float64(boxHeightInt), float64(boxSpreadInt), float64(boxOrientationInt))
+
+		shots := []string{}
+		for _, shot := range shotsGrids[1:] {
+			boxAz, err := CalcAzimuth(gunGrid.Text, shot)
+			if err != nil {
+				a.SendNotification(fyne.NewNotification("Error", "Check your dispersion distance"))
+				return
+			}
+			boxDist, err := CalcDistance(gunGrid.Text, shot)
+			if err != nil {
+				a.SendNotification(fyne.NewNotification("Error", "Check your dispersion distance"))
+				return
+			}
+
+			highAngle, _ := CalcAngleHigh(float64(gunAltInt), float64(lastCalcMission.TargetAlt), boxDist, curGun[chargeSelection.Selected], airResistanceBool)
+			lowAngle, _ := CalcAngleLow(float64(gunAltInt), float64(lastCalcMission.TargetAlt), boxDist, curGun[chargeSelection.Selected], airResistanceBool)
+
+			shots = append(shots, fmt.Sprintf("%s - AZ: %d | HA: %d | LA: %d", shot, int(boxAz), int(highAngle), int(lowAngle)))
+		}
+
 		shotWindow := a.NewWindow("Box Sheaf")
 		closeButton := widget.NewButton("Close", func() {
 			shotWindow.Close()
@@ -1020,6 +1076,7 @@ func main() {
 	linearCount.PlaceHolder = "Number of shots"
 	linearDispersion.PlaceHolder = "Dispersion of rounds"
 	linearDirection.PlaceHolder = "Direction of Shift"
+
 	adjustMissions := container.NewTabItem("Adjustments", container.NewVScroll(container.NewVBox(
 		widget.NewLabel("Observer to Target Adjusts"),
 		otlDirection,
@@ -1029,8 +1086,10 @@ func main() {
 		otlCalculate,
 		widget.NewSeparator(),
 		widget.NewLabel("Box Sheaf"),
-		boxSize,
+		boxWidth,
+		boxHeight,
 		boxSpread,
+		boxOrientation,
 		boxCalculate,
 		widget.NewSeparator(),
 		widget.NewLabel("Linear Sheafs"),
