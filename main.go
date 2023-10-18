@@ -1193,7 +1193,27 @@ func main() {
 	degreesMilsImage := canvas.NewImageFromResource(fyne.NewStaticResource("degreesToMils", degreeMils))
 	degreesMilsImage.FillMode = canvas.ImageFillOriginal
 
-	utilityTab := container.NewTabItem("Utilities", container.NewVScroll(container.NewVBox(widget.NewLabel("Air Density Calculator"),
+	observerPos := widget.NewEntry()
+	observerPos.SetPlaceHolder("Observer Position")
+	targetAz := widget.NewEntry()
+	targetAz.SetPlaceHolder("Target Azimuth")
+	targetDist := widget.NewEntry()
+	targetDist.SetPlaceHolder("Target Distance")
+	targetPos := widget.NewEntry()
+	targetPos.SetPlaceHolder("Target Position")
+
+	calculatePolar := widget.NewButton("Calculate Polar From Observer", func() {
+		targetPosCalc, err := PolarToGrid(targetDist.Text, targetAz.Text, observerPos.Text)
+		if err != nil {
+			a.SendNotification(fyne.NewNotification("Error", err.Error()))
+			return
+		}
+		targetPos.SetText(targetPosCalc)
+		targetPos.Refresh()
+	})
+
+	utilityTab := container.NewTabItem("Utilities", container.NewVScroll(container.NewVBox(widget.NewLabel("Polar from Observer Grid Calculator"),
+		observerPos, targetAz, targetDist, calculatePolar, targetPos, widget.NewLabel("Air Density Calculator"),
 		pressure, temperature, humidity, airDensityBox, airDensityCoefBox, calcDensity, widget.NewSeparator(),
 		degreesMilsImage, widget.NewSeparator(), widget.NewLabel("Degrees to Mils Conversions"), degreesToMilsCalcEntry,
 		degreesToMilsCalcLabel, degreesToMilsCalcButton)))
