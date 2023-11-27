@@ -17,6 +17,13 @@
     "Charge 2" : 388.8,
     "Charge 3" : 526.5
   },
+  "M109A6 Paladin" : {
+    "Charge 0" : 153.9,
+    "Charge 1" : 243,
+    "Charge 2" : 388.8,
+    "Charge 3" : 648.0,
+    "Charge 4" : 810.0
+  },
   "M252" :{
     "Charge 0":	40,
     "Charge 1":	80,
@@ -88,5 +95,34 @@
     "Charge 0": 73.8,
     "Charge 1": 147.7,
     "Charge 2": 211
+  },
+  "M224 (ACE)": {
+    "Charge 0": 63.2,
+    "Charge 1": 113.2
+  },
+  "M270 MLRS": {
+    "Charge 0": 114.8,
+    "Charge 1": 130.1,
+    "Charge 2": 148.8,
+    "Charge 3": 170.0,
+    "Charge 4": 193.8,
+    "Charge 5": 221.9,
+    "Charge 6": 255.0,
+    "Charge 7": 289.9,
+    "Charge 8": 329.8,
+    "Charge 9": 374.0,
+    "Charge 10": 420.8,
+    "Charge 11": 476.0,
+    "Charge 12": 543.2,
+    "Charge 13": 629.0,
+    "Charge 14": 715.7,
+    "Charge 15": 816.0
+  },
+  "MK45 Hammer": {
+    "Charge 0": 145.8,
+    "Charge 1": 202.5,
+    "Charge 2": 405.0,
+    "Charge 3": 607.5,
+    "Charge 4": 810.0
   }
-}
+  }
