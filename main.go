@@ -19,6 +19,7 @@ import (
 	"image"
 	"image/png"
 	"math"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -605,19 +606,52 @@ func GraphShotDrag(dataPoints plotter.XYs, distance float64, lowHigh string) ima
 
 }
 
+func GetLatestNumbers() Guns {
+	tempGuns := Guns{}
+	resp, err := http.Get("https://raw.githubusercontent.com/habitualdev/ArtyCalc/main/artillery.json")
+	if err != nil {
+		err = json.Unmarshal(artilleryJson, &tempGuns)
+		return tempGuns
+	}
+	defer resp.Body.Close()
+	buf := []byte{}
+	resp.Body.Read(buf)
+	err = json.Unmarshal(buf, &tempGuns)
+	if err != nil {
+		err = json.Unmarshal(artilleryJson, &tempGuns)
+		return tempGuns
+	}
+	return tempGuns
+}
+
+func GetLatestNumbersDrag() DragTable {
+	artyDrag := DragTable{}
+	resp, err := http.Get("https://raw.githubusercontent.com/habitualdev/ArtyCalc/main/drag.json")
+	if err != nil {
+		err = json.Unmarshal(dragTable, &artyDrag)
+		return artyDrag
+	}
+	defer resp.Body.Close()
+	buf := []byte{}
+	resp.Body.Read(buf)
+	err = json.Unmarshal(buf, &artyDrag)
+	if err != nil {
+		err = json.Unmarshal(dragTable, &artyDrag)
+		return artyDrag
+	}
+	return artyDrag
+}
+
 func main() {
 	lastCalcMission := FireMission{}
 	var savedMissions FireMissions
-	var err error
 	airResistanceBool := false
 	guns := Guns{}
 
 	curGun := Gun{}
 
-	err = json.Unmarshal(artilleryJson, &guns)
-	if err != nil {
-		return
-	}
+	guns = GetLatestNumbers()
+	dragTableJson = GetLatestNumbersDrag()
 
 	a = app.New()
 	a.Settings().SetTheme(theme.DarkTheme())

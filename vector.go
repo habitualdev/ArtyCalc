@@ -2,7 +2,6 @@ package main
 
 import (
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"gonum.org/v1/plot/plotter"
 	"math"
@@ -12,6 +11,8 @@ import (
 var dragTable []byte
 
 type DragTable map[string]float64
+
+var dragTableJson = DragTable{}
 
 const timeStep = 1.0 / 60
 
@@ -66,9 +67,7 @@ func (v vector3) lerp(vector vector3, t float64) vector3 {
 
 func CalculateForAngle(delta, testAngle, muz float64) (float64, float64, plotter.XYs) {
 	newPlot := plotter.XYs{}
-	table := DragTable{}
-	json.Unmarshal(dragTable, &table)
-	trueDrag := table[currentGunString]
+	trueDrag := dragTableJson[currentGunString]
 
 	k := -1 * trueDrag * 1
 	temperature := 15.0
