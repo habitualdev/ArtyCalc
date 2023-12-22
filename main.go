@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/google/uuid"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
@@ -20,6 +21,7 @@ import (
 	"image/png"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -55,6 +57,10 @@ const dragCoef float64 = -0.00006
 
 const r2m float64 = 1018.591636
 
+const addMarker = "/api/markers/add"
+
+const deleteMarker = "/api/markers/delete"
+
 var a fyne.App
 
 var mute = false
@@ -69,9 +75,22 @@ var lastVectorPlotHigh plotter.XYs
 
 var lastVectorPlotLow plotter.XYs
 
+var habTacSync = false
+
 type BallisticPoint struct {
 	X float64
 	Y float64
+}
+
+type Marker struct {
+	Lat      string `json:"lat"`
+	Lng      string `json:"lng"`
+	Elv      string `json:"elv"`
+	Title    string `json:"title"`
+	Unit     string `json:"unit"`
+	Map      string `json:"map"`
+	Comments string `json:"comments"`
+	Id       string `json:"id"`
 }
 
 func CalcAngleHigh(initHeight, finalHeight, distance, velocity float64, drag bool) (float64, float64) {
@@ -642,7 +661,10 @@ func GetLatestNumbersDrag() DragTable {
 	return artyDrag
 }
 
+var sessionUuid = ""
+
 func main() {
+	sessionUuid = uuid.New().String()
 	lastCalcMission := FireMission{}
 	var savedMissions FireMissions
 	airResistanceBool := false
@@ -668,6 +690,10 @@ func main() {
 		} else {
 			mute = true
 		}
+	})
+
+	habTacLogin := widget.NewCheck("HabTac Sync", func(checked bool) {
+		habTacSync = checked
 	})
 
 	timeOfFlight := widget.NewLabel("TOF: ")
@@ -712,7 +738,7 @@ func main() {
 		chargeSelection.Options = curGunCharges
 	})
 
-	gunSelectRow := container.NewHBox(gunSelection, chargeSelection)
+	gunSelectRow := container.NewHBox(gunSelection, chargeSelection, habTacLogin)
 
 	highAngleImage := canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 100, 100)))
 	lowAngleImage := canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 100, 100)))
@@ -1246,11 +1272,109 @@ func main() {
 		targetPos.Refresh()
 	})
 
+	habTacUrl := widget.NewEntry()
+	habTacUrl.SetPlaceHolder("HabTac URL")
+	habTacSession := widget.NewEntry()
+	habTacSession.SetPlaceHolder("HabTac Session")
+	habTacGunName := widget.NewEntry()
+	habTacGunName.SetPlaceHolder("HabTac Gun Name")
+
+	go func() {
+		for {
+			if habTacSync {
+				habTacGunName.Disable()
+				gunGrid.Disable()
+				if habTacUrl.Text == "" || habTacSession.Text == "" {
+					habTacLogin.SetChecked(false)
+					continue
+				}
+				_, err2 := url.Parse(habTacUrl.Text)
+				if err2 != nil {
+					habTacLogin.SetChecked(false)
+					continue
+				}
+				if gunGrid.Text != "" {
+					_, err := http.Get(habTacUrl.Text + deleteMarker + "?session=" + habTacSession.Text + "&title=" + habTacGunName.Text)
+					if err != nil {
+						a.SendNotification(fyne.NewNotification("Error", err.Error()))
+						continue
+					}
+					northing := ""
+					easting := ""
+					switch len(gunGrid.Text) {
+					case 6:
+						northing = gunGrid.Text[:3] + "00"
+						easting = gunGrid.Text[3:] + "00"
+					case 8:
+						northing = gunGrid.Text[:4] + "0"
+						easting = gunGrid.Text[4:] + "0"
+					case 10:
+						northing = gunGrid.Text[:5]
+						easting = gunGrid.Text[5:]
+
+					}
+					reqForm := url.Values{
+						"lat":      {easting},
+						"lng":      {northing},
+						"elv":      {gunAltitude.Text},
+						"title":    {habTacGunName.Text},
+						"unit":     {"savage"},
+						"comments": {gunSelection.Selected},
+						"session":  {habTacSession.Text},
+						"id":       {sessionUuid},
+					}
+
+					_, err = http.PostForm(habTacUrl.Text+addMarker, reqForm)
+					if err != nil {
+						a.SendNotification(fyne.NewNotification("Error", err.Error()))
+						continue
+					}
+
+				}
+
+				totalUrl := habTacUrl.Text + "/api/markers?session=" + habTacSession.Text
+				resp, err := http.Get(totalUrl)
+				if err != nil {
+					a.SendNotification(fyne.NewNotification("Error", err.Error()))
+					continue
+				}
+				markers := []Marker{}
+				err = json.NewDecoder(resp.Body).Decode(&markers)
+				if err != nil {
+					a.SendNotification(fyne.NewNotification("Error", err.Error()))
+					continue
+				}
+				savedMissions = []FireMission{}
+				for _, marker := range markers {
+					if marker.Unit != "fm" {
+						continue
+					}
+					elvConversion, err := strconv.Atoi(marker.Elv)
+					if err != nil {
+						continue
+					}
+					savedMissions = append(savedMissions, FireMission{
+						Name:       marker.Title,
+						TargetGrid: marker.Lng + marker.Lat,
+						TargetAlt:  elvConversion,
+						Type:       1,
+					})
+				}
+			} else {
+				habTacGunName.Enable()
+				gunGrid.Enable()
+			}
+			savedMissionList.Refresh()
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
 	utilityTab := container.NewTabItem("Utilities", container.NewVScroll(container.NewVBox(widget.NewLabel("Polar from Observer Grid Calculator"),
 		observerPos, targetAz, targetDist, calculatePolar, targetPos, widget.NewLabel("Air Density Calculator"),
 		pressure, temperature, humidity, airDensityBox, airDensityCoefBox, calcDensity, widget.NewSeparator(),
 		degreesMilsImage, widget.NewSeparator(), widget.NewLabel("Degrees to Mils Conversions"), degreesToMilsCalcEntry,
-		degreesToMilsCalcLabel, degreesToMilsCalcButton)))
+		degreesToMilsCalcLabel, degreesToMilsCalcButton, widget.NewSeparator(), widget.NewLabel("HabTac Sync"),
+		habTacUrl, habTacSession, habTacGunName, habTacLogin, widget.NewSeparator(), widget.NewLabel("Mute Audio"), muteButton)))
 
 	infoTab := container.NewTabItemWithIcon("Info", theme.ListIcon(), container.NewVBox(
 		widget.NewLabel("Thanks to the following people:"),
