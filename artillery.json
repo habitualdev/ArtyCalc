@@ -124,5 +124,11 @@
     "Charge 2": 405.0,
     "Charge 3": 607.5,
     "Charge 4": 810.0
+  },
+  "MLRS (M983 Tractor)": {
+    "Charge 0": 212.5,
+    "Charge 1": 425.0,
+    "Charge 2": 637.5,
+    "Charge 3": 841.5
   }
   }
