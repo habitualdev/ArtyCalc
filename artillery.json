@@ -130,5 +130,36 @@
     "Charge 1": 425.0,
     "Charge 2": 637.5,
     "Charge 3": 841.5
+  },
+  "Type 97 (WW2)" : {
+    "Charge 0": 117.6,
+    "Charge 1": 166.6
+  },
+  "M2 60mm (WW2)" : {
+    "Charge 0": 106.7,
+    "Charge 1": 115.5,
+    "Charge 2": 124.3,
+    "Charge 3": 133.5
+  },
+  "RM-38 (50mm)" : {
+    "Charge 0": 48.0,
+    "Charge 1": 85.0
+  },
+  "Commando Mortar (60mm)" : {
+    "Charge 0"  :  52.5,
+    "Charge 1"   :  105.0,
+    "Charge 2" :   150.0
+  },
+  "Twin Mortar (120mm)" : {
+   "Charge 0" :  145.8,
+    "Charge 1"  :   202.5,
+    "Charge 2"  :  405.0,
+    "Charge 3":    607.5,
+    "Charge 4":    810.0
+  },
+  "M119A2 (RHS)" : {
+    "Charge 0": 153.9,
+    "Charge 1": 243,
+    "Charge 2": 388.8
   }
   }
