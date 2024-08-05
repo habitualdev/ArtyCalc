@@ -233,6 +233,7 @@ func OTLAdjust(gunHeight, targetHeight, origDistance, shiftDistanceY, shiftDista
 	}
 	
 	if shiftDistanceY == 0	{
+
 		switch directionX {
 		case "Right":
 			adjustAzimuth = adjustAzimuth + 1600
@@ -246,17 +247,19 @@ func OTLAdjust(gunHeight, targetHeight, origDistance, shiftDistanceY, shiftDista
 			}
 		}
 	}
-
-	switch directionY {
-		case "Drop":
-			adjustAzimuth = adjustAzimuth - 3200
-			if adjustAzimuth < 0 {
-				adjustAzimuth = adjustAzimuth + 6400
-			}
-		default:
-			break
+	
+	if shiftDistanceX == 0 {
+		switch directionY {
+			case "Drop":
+				adjustAzimuth = adjustAzimuth - 3200
+				if adjustAzimuth < 0 {
+					adjustAzimuth = adjustAzimuth + 6400
+				}
+			default:
+				break
+		}
 	}
-
+	
 	shiftDistance := math.Sqrt(math.Pow(shiftDistanceY, 2) + math.Pow(shiftDistanceX, 2))
 
 
@@ -1031,7 +1034,7 @@ func main() {
 		distance, _ := CalcDistance(gunGrid.Text, lastCalcMission.TargetGrid)
 		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
 		otlCalc.SetText(OTLAdjust(float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(otlDistYInt), float64(otlDistXInt), 
-			float64(otlAngleInt), origAz, curGun[chargeSelection.Selected], otlDistanceY.SelectedText(), otlDistanceX.SelectedText(), airResistanceBool))
+			float64(otlAngleInt), origAz, curGun[chargeSelection.Selected], otlDirectionY.Selected, otlDirectionX.Selected, airResistanceBool))
 		if !mute {
 			go Solution()
 		}
