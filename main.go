@@ -251,6 +251,7 @@ func DrawARect(originalPoint string, width, height, spread, orientation float64)
 	numShotsX := width / spread
 	numShotsY := height / spread
 
+	rightOrientation := orientation + 1600
 	if rightOrientation >= 6400 { // Just > will throw an error later on when the Box orientation is exactly 4800
 		rightOrientation = rightOrientation - 6400
 	}
