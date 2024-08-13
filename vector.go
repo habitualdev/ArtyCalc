@@ -65,9 +65,12 @@ func (v vector3) lerp(vector vector3, t float64) vector3 {
 	return a.add(b)
 }
 
-func CalculateForAngle(delta, testAngle, muz float64) (float64, float64, plotter.XYs) {
+func CalculateForAngle(delta, testAngle, muz float64, drag bool) (float64, float64, plotter.XYs) {
 	newPlot := plotter.XYs{}
-	trueDrag := dragTableJson[currentGunString]
+	trueDrag := 0.0
+	if drag {
+		trueDrag = dragTableJson[currentGunString]
+	}
 
 	k := -1 * trueDrag * 1
 	temperature := 15.0

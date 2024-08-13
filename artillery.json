@@ -24,6 +24,20 @@
     "Charge 3" : 648.0,
     "Charge 4" : 810.0
   },
+  "M109A6 Paladin (ITC)" : {
+    "Charge 1" : 92,
+    "Charge 2" : 170,
+    "Charge 3" : 255,
+    "Charge 4" : 340,
+    "Charge 5" : 425
+  },
+  "MK45 Hammer (ITC)" : {
+    "Charge 1" : 100,
+    "Charge 2" : 200,
+    "Charge 3" : 300,
+    "Charge 4" : 400,
+    "Charge 5" : 500
+  },
   "M252" :{
     "Charge 0":	40,
     "Charge 1":	80,

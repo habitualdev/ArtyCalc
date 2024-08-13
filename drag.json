@@ -23,5 +23,7 @@
   "RM-38 (50mm)" : -0.0001,
   "Commando Mortar (60mm)" : -0.00006,
   "Twin Mortar (120mm)" : -0.00006,
-  "M119A2 (RHS)" : -0.00006
+  "M119A2 (RHS)" : -0.00006,
+  "M109A6 Paladin (ITC)" : -0.00006,
+  "MK45 Hammer (ITC)" : -0.00006
 }
