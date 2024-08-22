@@ -238,9 +238,13 @@ func DrawARect(originalPoint string, width, height, spread, orientation float64)
 	numShotsX := width / spread
 	numShotsY := height / spread
 
+	if rightOrientation >= 6400 {
+		rightOrientation = rightOrientation - 6400
+	}
+	
 	for i := 0.0; i <= numShotsX; i++ {
 
-		startPoint, _ := PolarToGrid(strconv.Itoa(int(spread*i)), strconv.Itoa(int(orientation+1600)), originalPoint)
+		startPoint, _ := PolarToGrid(strconv.Itoa(int(spread*i)), strconv.Itoa(int(rightOrientation)), originalPoint)
 		for j := 0.0; j <= numShotsY; j++ {
 			newGrid, _ := PolarToGrid(strconv.Itoa(int(spread*j)), strconv.Itoa(int(orientation)), startPoint)
 			shots = append(shots, newGrid)
