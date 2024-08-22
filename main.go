@@ -614,9 +614,11 @@ func main() {
 
 	adjustMissions := container.NewTabItem("Adjustments", container.NewVScroll(container.NewVBox(
 		widget.NewLabel("Observer to Target Adjusts"),
-		otlDirection,
-		otlAngle,
-		otlDistance,
+		otlAngle,		
+		otlDirectionY,
+		otlDistanceY,
+		otlDirectionX,
+		otlDistanceX,
 		otlCalc,
 		otlCalculate,
 		widget.NewSeparator(),
