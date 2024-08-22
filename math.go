@@ -148,27 +148,67 @@ func LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, shiftAzim
 	return fmt.Sprintf("Azimuth: %d | HA: %d | LA: %d", newAz, int(high), int(low))
 }
 
-func OTLAdjust(gunHeight, targetHeight, origDistance, shiftDistance, otlAzimuth, azimuth, velocity float64, direction string, drag bool) string {
+func OTLAdjust(gunHeight, targetHeight, origDistance, shiftDistanceY, shiftDistanceX, otlAzimuth, azimuth, velocity float64, directionY string, directionX string, drag bool) string {
 	adjustAzimuth := otlAzimuth
-	switch direction {
-	case "Left":
-		adjustAzimuth = adjustAzimuth - 1600
-		if adjustAzimuth < 0 {
-			adjustAzimuth = adjustAzimuth + 6400
+	adjustmentType := directionX + directionY //This concats the strings, not the actual meters
+
+	// If any of these are 0, then there is an easier way of calculating this
+	if shiftDistanceY != 0 && shiftDistanceX != 0 {
+		deflection := math.Atan(shiftDistanceY/shiftDistanceX) * r2m
+		switch adjustmentType {
+		case "LeftAdd":
+			adjustAzimuth = adjustAzimuth - ( 1600 - deflection)
+			if adjustAzimuth < 0 {
+				adjustAzimuth = adjustAzimuth + 6400
+			}
+		case "LeftDrop":
+			adjustAzimuth = adjustAzimuth - ( 1600 + deflection)
+			if adjustAzimuth < 0 {
+				adjustAzimuth = adjustAzimuth + 6400
+			}
+		case "RightAdd":
+			adjustAzimuth = adjustAzimuth + ( 1600 - deflection)
+			if adjustAzimuth > 0 {
+				adjustAzimuth = adjustAzimuth - 6400
+			}
+		case "RightDrop":
+			adjustAzimuth = adjustAzimuth + ( 1600 + deflection)
+			if adjustAzimuth > 0 {
+				adjustAzimuth = adjustAzimuth - 6400
+			}
 		}
-	case "Right":
-		adjustAzimuth = adjustAzimuth + 1600
-		if adjustAzimuth > 0 {
-			adjustAzimuth = adjustAzimuth - 6400
-		}
-	case "Subtract":
-		adjustAzimuth = adjustAzimuth - 3200
-		if adjustAzimuth < 0 {
-			adjustAzimuth = adjustAzimuth + 6400
-		}
-	default:
-		break
 	}
+	
+	if shiftDistanceY == 0	{
+
+		switch directionX {
+		case "Right":
+			adjustAzimuth = adjustAzimuth + 1600
+			if adjustAzimuth > 0 {
+				adjustAzimuth = adjustAzimuth - 6400
+			}
+		case "Left":
+			adjustAzimuth = adjustAzimuth - 1600
+			if adjustAzimuth < 0 {
+				adjustAzimuth = adjustAzimuth + 6400
+			}
+		}
+	}
+	
+	if shiftDistanceX == 0 {
+		switch directionY {
+			case "Drop":
+				adjustAzimuth = adjustAzimuth - 3200
+				if adjustAzimuth < 0 {
+					adjustAzimuth = adjustAzimuth + 6400
+				}
+			default:
+				break
+		}
+	}
+	
+	shiftDistance := math.Sqrt(math.Pow(shiftDistanceY, 2) + math.Pow(shiftDistanceX, 2))
+
 
 	return LinearSheaf(gunHeight, targetHeight, origDistance, shiftDistance, adjustAzimuth, azimuth, velocity, drag)
 }
