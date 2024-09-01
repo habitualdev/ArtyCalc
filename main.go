@@ -418,36 +418,47 @@ func main() {
 	})
 
 	otlAngle := widget.NewEntry()
-	otlDirection := widget.NewSelect([]string{"Add", "Subtract", "Left", "Right"}, nil)
-	otlDirection.SetSelected("Add")
-	otlDistance := widget.NewEntry()
-	otlAngle.PlaceHolder = "Observer Target Angle"
-	otlDistance.PlaceHolder = "Adjust Distance"
+	otlDirectionX := widget.NewSelect([]string{"Left", "Right"}, nil)
+	otlDirectionX.SetSelected("Left")
+	otlDirectionY := widget.NewSelect([]string{"Add", "Drop"}, nil)
+	otlDirectionY.SetSelected("Add")
+	otlDistanceY := widget.NewEntry()
+	otlDistanceX := widget.NewEntry()
+
+	otlAngle.PlaceHolder = "Observer to Target Line in MILS"
+	otlDistanceY.PlaceHolder = "Adjust add/drop distance"
+	otlDistanceX.PlaceHolder = "Adjust left/right distance"
 	otlCalc := widget.NewLabel("")
 
 	otlCalculate := widget.NewButton("Calculate OTL Adjust", func() {
-		otlDistInt, err := strconv.Atoi(otlDistance.Text)
+		otlDistYInt, err := strconv.Atoi(otlDistanceY.Text)
 		if err != nil {
-			a.SendNotification(fyne.NewNotification("Error", "Check your box size"))
+			a.SendNotification(fyne.NewNotification("Error", "Check your Add/Drop distance"))
+			return
+		}
+		
+		otlDistXInt, err := strconv.Atoi(otlDistanceX.Text)
+		if err != nil {
+			a.SendNotification(fyne.NewNotification("Error", "Check your Left/Right distance"))
 			return
 		}
 
 		otlAngleInt, err := strconv.Atoi(otlAngle.Text)
 		if err != nil {
-			a.SendNotification(fyne.NewNotification("Error", "Check your box size"))
+			a.SendNotification(fyne.NewNotification("Error", "Check your Observer to target Angle"))
 			return
 		}
 
 		gunAltInt, err := strconv.Atoi(gunAltitude.Text)
 		if err != nil {
-			a.SendNotification(fyne.NewNotification("Error", "Check your dispersion distance"))
+			a.SendNotification(fyne.NewNotification("Error", "Check your Gun altitude"))
 			return
 		}
 
 		distance, _ := CalcDistance(gunGrid.Text, lastCalcMission.TargetGrid)
 		origAz, _ := CalcAzimuth(gunGrid.Text, lastCalcMission.TargetGrid)
-		otlCalc.SetText(OTLAdjust(float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(otlDistInt),
-			float64(otlAngleInt), origAz, curGun[chargeSelection.Selected], otlDistance.SelectedText(), airResistanceBool))
+		otlCalc.SetText(OTLAdjust(float64(gunAltInt), float64(lastCalcMission.TargetAlt), distance, float64(otlDistYInt), float64(otlDistXInt), 
+			float64(otlAngleInt), origAz, curGun[chargeSelection.Selected], otlDirectionY.Selected, otlDirectionX.Selected, airResistanceBool))
 		if !mute {
 			go Solution()
 		}
@@ -603,9 +614,11 @@ func main() {
 
 	adjustMissions := container.NewTabItem("Adjustments", container.NewVScroll(container.NewVBox(
 		widget.NewLabel("Observer to Target Adjusts"),
-		otlDirection,
-		otlAngle,
-		otlDistance,
+		otlAngle,		
+		otlDirectionY,
+		otlDistanceY,
+		otlDirectionX,
+		otlDistanceX,
 		otlCalc,
 		otlCalculate,
 		widget.NewSeparator(),
