@@ -25,5 +25,9 @@
   "Twin Mortar (120mm)" : -0.00006,
   "M119A2 (RHS)" : -0.00006,
   "M109A6 Paladin (ITC)" : -0.00006,
-  "MK45 Hammer (ITC)" : -0.00006
+  "MK45 Hammer (ITC)" : -0.00006,
+  "USS Cleveland (Spearhead)" : -0.00025,
+  "M3 105mm (Spearhead)" : -0.00006,
+  "M1 81mm (Spearhead)" : -0.00006,
+  "M1 60mm (Spearhead)" : -0.00006
 }

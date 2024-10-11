@@ -1,92 +1,92 @@
 {
-  "60mm/81mm/107mm (Unsung)" : {
-    "Charge 0" : 68.5333,
-    "Charge 1" : 132.3087,
-    "Charge 2" : 181.918
+  "60mm/81mm/107mm (Unsung)": {
+    "Charge 0": 68.5333,
+    "Charge 1": 132.3087,
+    "Charge 2": 181.918
   },
-  "155mm/105mm/M-110/M-107 (Unsung)" : {
-    "Charge 0" : 153.9,
-    "Charge 1" : 243.0,
-    "Charge 2" : 388.8,
-    "Charge 3" : 648.0,
-    "Charge 4" : 810.0
+  "155mm/105mm/M-110/M-107 (Unsung)": {
+    "Charge 0": 153.9,
+    "Charge 1": 243.0,
+    "Charge 2": 388.8,
+    "Charge 3": 648.0,
+    "Charge 4": 810.0
   },
-  "M777" : {
-    "Charge 0" : 153.9,
-    "Charge 1" : 243,
-    "Charge 2" : 388.8,
-    "Charge 3" : 526.5
+  "M777": {
+    "Charge 0": 153.9,
+    "Charge 1": 243,
+    "Charge 2": 388.8,
+    "Charge 3": 526.5
   },
-  "M109A6 Paladin" : {
-    "Charge 0" : 153.9,
-    "Charge 1" : 243,
-    "Charge 2" : 388.8,
-    "Charge 3" : 648.0,
-    "Charge 4" : 810.0
+  "M109A6 Paladin": {
+    "Charge 0": 153.9,
+    "Charge 1": 243,
+    "Charge 2": 388.8,
+    "Charge 3": 648.0,
+    "Charge 4": 810.0
   },
-  "M109A6 Paladin (ITC)" : {
-    "Charge 1" : 92,
-    "Charge 2" : 170,
-    "Charge 3" : 255,
-    "Charge 4" : 340,
-    "Charge 5" : 425
+  "M109A6 Paladin (ITC)": {
+    "Charge 1": 92,
+    "Charge 2": 170,
+    "Charge 3": 255,
+    "Charge 4": 340,
+    "Charge 5": 425
   },
-  "MK45 Hammer (ITC)" : {
-    "Charge 1" : 100,
-    "Charge 2" : 200,
-    "Charge 3" : 300,
-    "Charge 4" : 400,
-    "Charge 5" : 500
+  "MK45 Hammer (ITC)": {
+    "Charge 1": 100,
+    "Charge 2": 200,
+    "Charge 3": 300,
+    "Charge 4": 400,
+    "Charge 5": 500
   },
-  "M252" :{
-    "Charge 0":	40,
-    "Charge 1":	80,
-    "Charge 2":	120,
-    "Charge 3":	160,
+  "M252": {
+    "Charge 0": 40,
+    "Charge 1": 80,
+    "Charge 2": 120,
+    "Charge 3": 160,
     "Charge 4": 200
   },
-  "M2 60mm (PF)" : {
+  "M2 60mm (PF)": {
     "Charge 0": 70,
     "Charge 1": 140
   },
-  "M29 81mm (PF)" : {
-    "Charge 0":	70,
-    "Charge 1":	140,
-    "Charge 2":	200
+  "M29 81mm (PF)": {
+    "Charge 0": 70,
+    "Charge 1": 140,
+    "Charge 2": 200
   },
-  "M101 105mm (PF)" : {
-    "Charge 0":	153.9,
-    "Charge 1":	243,
-    "Charge 2":	388.8
+  "M101 105mm (PF)": {
+    "Charge 0": 153.9,
+    "Charge 1": 243,
+    "Charge 2": 388.8
   },
-  "Type 63 60mm (PF)" : {
+  "Type 63 60mm (PF)": {
     "Charge 0": 70.0,
     "Charge 1": 140.0
   },
-  "H12 Rocket Launcher (PF)" : {
-    "Charge 0":	114.8,
-    "Charge 1":	130.1,
-    "Charge 2":	148.8,
-    "Charge 3":	170,
+  "H12 Rocket Launcher (PF)": {
+    "Charge 0": 114.8,
+    "Charge 1": 130.1,
+    "Charge 2": 148.8,
+    "Charge 3": 170,
     "Charge 4": 193.8,
-    "Charge 5":	221.9,
-    "Charge 6":	255,
-    "Charge 7":	289.9
+    "Charge 5": 221.9,
+    "Charge 6": 255,
+    "Charge 7": 289.9
   },
-  "M6 Mortar (3CB)" : {
+  "M6 Mortar (3CB)": {
     "CH0": 88.7,
     "CH1": 110.2,
     "CH2": 130.1,
     "CH3": 153.0
   },
-  "L16 (3CB)" : {
-    "CH0" : 80.0,
-    "CH1" : 132.0,
-    "CH2" : 179.0,
-    "CH3" : 218.0,
-    "CH4" : 253.0,
-    "CH5" : 284.0,
-    "CH6" : 314.0
+  "L16 (3CB)": {
+    "CH0": 80.0,
+    "CH1": 132.0,
+    "CH2": 179.0,
+    "CH3": 218.0,
+    "CH4": 253.0,
+    "CH5": 284.0,
+    "CH6": 314.0
   },
   "2S3M1 (RHS)": {
     "Charge 0": 167.7,
@@ -145,35 +145,59 @@
     "Charge 2": 637.5,
     "Charge 3": 841.5
   },
-  "Type 97 (WW2)" : {
+  "Type 97 (WW2)": {
     "Charge 0": 117.6,
     "Charge 1": 166.6
   },
-  "M2 60mm (WW2)" : {
+  "M2 60mm (WW2)": {
     "Charge 0": 106.7,
     "Charge 1": 115.5,
     "Charge 2": 124.3,
     "Charge 3": 133.5
   },
-  "RM-38 (50mm)" : {
+  "RM-38 (50mm)": {
     "Charge 0": 48.0,
     "Charge 1": 85.0
   },
-  "Commando Mortar (60mm)" : {
-    "Charge 0"  :  52.5,
-    "Charge 1"   :  105.0,
-    "Charge 2" :   150.0
+  "Commando Mortar (60mm)": {
+    "Charge 0": 52.5,
+    "Charge 1": 105.0,
+    "Charge 2": 150.0
   },
-  "Twin Mortar (120mm)" : {
-   "Charge 0" :  145.8,
-    "Charge 1"  :   202.5,
-    "Charge 2"  :  405.0,
-    "Charge 3":    607.5,
-    "Charge 4":    810.0
+  "Twin Mortar (120mm)": {
+    "Charge 0": 145.8,
+    "Charge 1": 202.5,
+    "Charge 2": 405.0,
+    "Charge 3": 607.5,
+    "Charge 4": 810.0
   },
-  "M119A2 (RHS)" : {
+  "M119A2 (RHS)": {
     "Charge 0": 153.9,
     "Charge 1": 243,
     "Charge 2": 388.8
+  },
+  "USS Cleveland (Spearhead)": {
+    "Charge 1": 900
+  },
+  "M3 105mm (Spearhead)": {
+    "Charge 0": 108.8,
+    "Charge 1": 143.1,
+    "Charge 2": 186.6,
+    "Charge 3": 217.7,
+    "Charge 4": 272.7
+  },
+  "M1 81mm (Spearhead)": {
+    "Charge 0": 75.3,
+    "Charge 1": 98.9,
+    "Charge 2": 118.3,
+    "Charge 3": 139.8,
+    "Charge 4": 150.5,
+    "Charge 5": 163.4,
+    "Charge 6": 174.1
+  },
+  "M1 60mm (Spearhead)": {
+    "Charge 0": 96.8,
+    "Charge 1": 120.4,
+    "Charge 2": 141.9
   }
-  }
+}
